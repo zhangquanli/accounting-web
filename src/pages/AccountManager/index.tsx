@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector } from "../../app/hooks";
-import { Button, Cascader, Empty, Form, Input, List, message, Modal, Table } from "antd";
+import { Button, Cascader, Empty, Form, Input, List, message, Modal } from "antd";
 import { insertAccount, selectAccounts } from "../../services/account";
 import styles from './index.module.scss';
-import { ColumnsType } from "antd/es/table";
 
 const AccountManager = () => {
-  const subjectOptions = useAppSelector(state => state.subject.data);
-
   const [accounts, setAccounts] = useState<any[]>([]);
 
   useEffect(() => {
@@ -33,26 +30,6 @@ const AccountManager = () => {
 
   const [visible, setVisible] = useState<boolean>(false);
 
-  const [subjectBalances, setSubjectBalances] = useState<any[]>([]);
-
-  const columns: ColumnsType<any> = [
-    {
-      title: '名称',
-      dataIndex: 'subject',
-      key: 'subject',
-    },
-    {
-      title: '类型',
-      dataIndex: 'initialType',
-      key: 'initialType',
-    },
-    {
-      title: '期初余额',
-      dataIndex: 'initialAmount',
-      key: 'initialAmount',
-    },
-  ];
-
   return (
     <div className={styles.container}>
       <div className={styles.list}>
@@ -71,14 +48,7 @@ const AccountManager = () => {
         />
       </div>
       <div className={styles.tree}>
-        {subjectBalances.length < 1 ? (<Empty />) : (
-          <Table
-            footer={undefined}
-            rowKey="id"
-            columns={columns}
-            dataSource={subjectBalances}
-          />
-        )}
+        <Empty />
       </div>
       <Modal
         title="新增账簿"
@@ -110,7 +80,7 @@ const AccountManager = () => {
             <Cascader
               multiple={true}
               fieldNames={{ value: 'id', label: 'name' }}
-              options={subjectOptions}
+              options={[]}
             />
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 4, span: 16 }}>

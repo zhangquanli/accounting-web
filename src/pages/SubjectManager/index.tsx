@@ -1,18 +1,52 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Col, Form, Input, Modal, Row, Select, Space, Table } from "antd";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { useAppDispatch } from "../../app/hooks";
 import { ColumnsType } from "antd/es/table";
 import { useForm } from "antd/es/form/Form";
-import { reloadSubjects } from "../../redux/subjectSlice";
+import { reloadSubjectBalances } from "../../redux/subjectBalanceSlice";
 import styles from './index.module.scss';
-import { insertSubject, updateSubject } from "../../services/subjectAPI";
+import { insertSubject, selectSubjects, updateSubject } from "../../services/subjectAPI";
+
+const fillTree = (subjects: any[]) => {
+  const subjectGroups: any = {};
+  for (let subject of subjects) {
+    if (Object.keys(subjectGroups).includes(subject.parentNum)) {
+      subjectGroups[subject.parentNum].push(subject);
+    } else {
+      subjectGroups[subject.parentNum] = [subject];
+    }
+  }
+  const fillTree: any = (parentNum: string, subjectGroups: any) => {
+    const result: any[] = subjectGroups[parentNum];
+    if (!result || result.length < 1) return undefined;
+    return result.map(item => {
+      const children = fillTree(item.num, subjectGroups);
+      return { ...item, children };
+    });
+  }
+  return fillTree('0', subjectGroups);
+}
 
 const SubjectManager = () => {
   const dispatch = useAppDispatch();
 
-  const subjectOptions = useAppSelector(state => state.subject.data);
+  const [categoryOptions] = useState<any[]>([
+    { value: 'ASSETS', label: '资产类' },
+    { value: 'LIABILITY', label: '负债类' },
+    { value: 'OWNERS_EQUITY', label: '所有者权益' },
+    { value: 'COST', label: '成本类' },
+    { value: 'PROFIT_AND_LOSS', label: '损益类' },
+  ]);
 
-  const categoryOptions = useAppSelector(state => state.subject.categories);
+  const [subjectOptions, setSubjectOptions] = useState<any[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const subjects = await selectSubjects();
+      const options = fillTree(subjects);
+      setSubjectOptions(options);
+    })();
+  }, []);
 
   const columns: ColumnsType<any> = [
     {
@@ -75,7 +109,9 @@ const SubjectManager = () => {
 
   return (
     <div className={styles.container}>
-      <Form form={queryForm} onFinish={() => dispatch(reloadSubjects())}>
+      <Form form={queryForm} onFinish={() => {
+        dispatch(reloadSubjectBalances());
+      }}>
         <Row gutter={16}>
           <Col span={4}>
             <Form.Item name="name" label="名称">
@@ -136,7 +172,7 @@ const SubjectManager = () => {
               await insertSubject(values);
             }
             setVisible(false);
-            dispatch(reloadSubjects());
+            dispatch(reloadSubjectBalances());
           }}
         >
           <Form.Item

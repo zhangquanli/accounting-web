@@ -1,11 +1,11 @@
 import { Action, configureStore, ThunkAction } from '@reduxjs/toolkit';
-import subjectReducer from '../redux/subjectSlice';
 import counterReducer from "../features/counter/counterSlice";
+import subjectBalanceReducer from "../redux/subjectBalanceSlice";
 
 export const store = configureStore({
   reducer: {
     counter: counterReducer,
-    subject: subjectReducer,
+    subjectBalance: subjectBalanceReducer,
   },
 });
 

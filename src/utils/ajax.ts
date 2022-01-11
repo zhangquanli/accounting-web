@@ -27,7 +27,16 @@ function request(url: string, data?: any, config?: AxiosRequestConfig): Promise<
 
 class Ajax {
   // get 请求
-  get(url: string, config?: AxiosRequestConfig) {
+  get(url: string, data?: any, config?: AxiosRequestConfig) {
+    if (data) {
+      url = url + '?';
+      for (let key of Object.keys(data)) {
+        if (data[key]) {
+          url = url + `${key}=${data[key]}&`;
+        }
+      }
+      url = url.substring(0, url.length - 1);
+    }
     const newConfig: AxiosRequestConfig = { ...config, method: 'get' };
     return request(url, undefined, newConfig);
   }
