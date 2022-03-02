@@ -1,23 +1,27 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import './index.css';
 import * as serviceWorker from './serviceWorker';
 import { Provider } from 'react-redux';
 import { store } from './app/store';
-import App from './App';
+import { BrowserRouter } from "react-router-dom";
 import { ConfigProvider } from "antd";
 import zhCn from 'antd/lib/locale/zh_CN';
 import moment from "moment";
 import 'moment/locale/zh-cn';
+import App from './App';
 
 moment.locale('zh-cn');
 
 ReactDOM.render((
   <React.StrictMode>
-    <Provider store={store}>
-      <ConfigProvider locale={zhCn}>
-        <App />
-      </ConfigProvider>
-    </Provider>
+    <BrowserRouter>
+      <Provider store={store}>
+        <ConfigProvider locale={zhCn}>
+          <App />
+        </ConfigProvider>
+      </Provider>
+    </BrowserRouter>
   </React.StrictMode>
 ), document.getElementById('root'));
 

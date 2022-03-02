@@ -1,18 +1,5 @@
 .container {
-  display: flex;
-
-  .list {
-    box-sizing: border-box;
-    width: 20%;
-    height: 100%;
-    flex-grow: 1;
-  }
-
-  .tree {
-    box-sizing: border-box;
-    width: 80%;
-    height: 100%;
-    flex-grow: 4;
-  }
+  padding: 16px;
+  background-color: #fff;
 }
 

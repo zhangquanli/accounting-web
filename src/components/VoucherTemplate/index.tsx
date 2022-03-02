@@ -9,10 +9,6 @@ import { getVoucher, insertVoucher } from "../../services/voucherAPI";
 import { selectLabels } from "../../services/labelAPI";
 import moment, { Moment } from "moment";
 
-interface Props {
-  voucherId?: number;
-}
-
 interface AccountingEntry {
   key: string;
   summary?: string;
@@ -59,10 +55,15 @@ const deepSearch = (options: any[], id: number, ids: any[]) => {
       }
     }
   }
-  return false;
 }
 
-const VoucherTemplate: FC<Props> = ({ voucherId }) => {
+interface Props {
+  voucherId?: number;
+  onSave?: () => void;
+  onInvalid?: () => void;
+}
+
+const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
   const [labelOptions, setLabelOptions] = useState<any[]>([]);
 
   // 初始化标签选项
@@ -196,11 +197,13 @@ const VoucherTemplate: FC<Props> = ({ voucherId }) => {
       accountDate: accountDate?.format('YYYY-MM-DD'),
     };
     await insertVoucher(data);
+    onSave && onSave();
   };
 
   // 冲红凭证
   const invalidVoucher = async () => {
 
+    onInvalid && onInvalid();
   };
 
   return (
@@ -379,7 +382,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId }) => {
           {voucherId ? (
             <Button type="link" danger={true} onClick={invalidVoucher}>冲红</Button>
           ) : (
-            <Button type="link" onClick={saveVoucher}>提交</Button>
+            <Button type="link" onClick={saveVoucher}>保存</Button>
           )}
         </Col>
       </Row>

@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Col, Form, Input, Modal, Row, Select, Space, Table } from "antd";
-import { useAppDispatch } from "../../app/hooks";
 import { ColumnsType } from "antd/es/table";
 import { useForm } from "antd/es/form/Form";
-import { reloadSubjectBalances } from "../../redux/subjectBalanceSlice";
 import styles from './index.module.scss';
 import { insertSubject, selectSubjects, updateSubject } from "../../services/subjectAPI";
 
@@ -25,53 +23,66 @@ const fillTree = (subjects: any[]) => {
     });
   }
   return fillTree('0', subjectGroups);
-}
+};
 
 const SubjectManager = () => {
-  const dispatch = useAppDispatch();
-
   const [categoryOptions] = useState<any[]>([
     { value: 'ASSETS', label: '资产类' },
+    { value: 'COMMON', label: '共同类' },
     { value: 'LIABILITY', label: '负债类' },
-    { value: 'OWNERS_EQUITY', label: '所有者权益' },
+    { value: 'OWNERS_EQUITY', label: '所有者权益类' },
     { value: 'COST', label: '成本类' },
     { value: 'PROFIT_AND_LOSS', label: '损益类' },
   ]);
 
   const [subjectOptions, setSubjectOptions] = useState<any[]>([]);
 
+  const changeSubjectOptions = async (queryParams: any) => {
+    const subjects = await selectSubjects(queryParams);
+    const options = fillTree(subjects);
+    setSubjectOptions(options);
+  };
+
   useEffect(() => {
     (async () => {
-      const subjects = await selectSubjects();
-      const options = fillTree(subjects);
-      setSubjectOptions(options);
+      await changeSubjectOptions({});
     })();
   }, []);
 
   const columns: ColumnsType<any> = [
     {
-      title: '名称',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
       title: '代码',
       dataIndex: 'code',
       key: 'code',
+      width: '20%',
+    },
+    {
+      title: '名称',
+      dataIndex: 'name',
+      key: 'name',
+      width: '20%'
     },
     {
       title: '分类',
       dataIndex: 'category',
       key: 'category',
+      width: '20%',
       render: value => {
         const option = categoryOptions.find(item => item.value === value);
         return option && option.label;
       },
     },
     {
+      title: '使用范围',
+      dataIndex: 'scope',
+      key: 'scope',
+      width: '20%',
+    },
+    {
       title: '操作',
       dataIndex: 'operation',
       key: 'operation',
+      width: '20%',
       render: (value, record) => {
         return (
           <Space>
@@ -83,7 +94,7 @@ const SubjectManager = () => {
                 setVisible(true);
               }}
             >
-              编辑
+              编辑本级
             </Button>
             <Button
               type="primary"
@@ -109,9 +120,7 @@ const SubjectManager = () => {
 
   return (
     <div className={styles.container}>
-      <Form form={queryForm} onFinish={() => {
-        dispatch(reloadSubjectBalances());
-      }}>
+      <Form form={queryForm} onFinish={(values) => changeSubjectOptions(values)}>
         <Row gutter={16}>
           <Col span={4}>
             <Form.Item name="name" label="名称">
@@ -153,6 +162,7 @@ const SubjectManager = () => {
         rowKey="id"
         columns={columns}
         dataSource={subjectOptions}
+        scroll={{ y: 500 }}
       />
       <Modal
         title="会计科目"
@@ -172,7 +182,8 @@ const SubjectManager = () => {
               await insertSubject(values);
             }
             setVisible(false);
-            dispatch(reloadSubjectBalances());
+            const params = queryForm.getFieldsValue();
+            await changeSubjectOptions(params);
           }}
         >
           <Form.Item
