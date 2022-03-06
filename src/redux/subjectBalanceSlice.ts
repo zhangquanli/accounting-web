@@ -12,7 +12,7 @@ const initialState: SubjectBalanceState = {
 export const reloadSubjectBalances = createAsyncThunk(
   'subjectBalance/reload',
   async () => {
-    const accountId = 1;
+    const accountId = 12;
     const subjectBalances = await selectSubjectBalances(`accountId=${accountId}`);
     const subjectGroups: any = {};
     for (let subjectBalance of subjectBalances) {
