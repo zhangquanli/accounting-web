@@ -4,10 +4,10 @@ import styles from './index.module.scss';
 import { nanoid } from "@reduxjs/toolkit";
 import { CloseCircleOutlined } from "@ant-design/icons";
 import { capitalAmount } from "../../utils/money";
-import { useAppSelector } from "../../app/hooks";
 import { getVoucher, insertVoucher } from "../../services/voucherAPI";
 import { selectLabels } from "../../services/labelAPI";
 import moment, { Moment } from "moment";
+import { selectSubjectBalances } from "../../services/subjectBalanceAPI";
 
 interface AccountingEntry {
   key: string;
@@ -32,12 +32,6 @@ const initialVoucher: Voucher = {
   ]
 };
 
-const getFullIds = (options: any[], id: number) => {
-  const ids: any[] = [];
-  deepSearch(options, id, ids);
-  return ids;
-};
-
 const deepSearch = (options: any[], id: number, ids: any[]) => {
   if (options && options.length > 0) {
     for (let option of options) {
@@ -57,6 +51,12 @@ const deepSearch = (options: any[], id: number, ids: any[]) => {
   }
 }
 
+const getFullIds = (options: any[], id: number) => {
+  const ids: any[] = [];
+  deepSearch(options, id, ids);
+  return ids;
+};
+
 interface Props {
   voucherId?: number;
   onSave?: () => void;
@@ -64,9 +64,10 @@ interface Props {
 }
 
 const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
+
+  // 标签数据
   const [labelOptions, setLabelOptions] = useState<any[]>([]);
 
-  // 初始化标签选项
   useEffect(() => {
     (async () => {
       const data = await selectLabels();
@@ -78,11 +79,66 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
     })();
   }, []);
 
-  // 科目余额数据
-  const subjectBalanceOptions = useAppSelector(state => state.subjectBalance.options);
 
-  // 凭证
+  // 科目余额数据
+  const [subjectBalanceOptions, setSubjectBalanceOptions] = useState<any[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const accountId = 12;
+      console.log('当前账簿：', accountId);
+      const subjectBalances = await selectSubjectBalances(`accountId=${accountId}`);
+      const subjectGroups: any = {};
+      for (let subjectBalance of subjectBalances) {
+        const { subject } = subjectBalance;
+        if (Object.keys(subjectGroups).includes(subject.parentNum)) {
+          subjectGroups[subject.parentNum].push(subjectBalance);
+        } else {
+          subjectGroups[subject.parentNum] = [subjectBalance];
+        }
+      }
+      const fillTree: any = (parentNum: string, subjectGroups: any) => {
+        const result: any[] = subjectGroups[parentNum];
+        if (!result || result.length < 1) return undefined;
+        return result.map(item => {
+          const children = fillTree(item.subject.num, subjectGroups);
+          return { ...item, children, name: item.subject.name };
+        });
+      }
+      const data = fillTree('0', subjectGroups);
+      setSubjectBalanceOptions(data);
+    })();
+  }, [])
+
+
+  // 记账凭证数据
   const [voucher, setVoucher] = useState<Voucher>(initialVoucher);
+
+  useEffect(() => {
+    (async () => {
+      if (voucherId) {
+        // 加载详情数据
+        const data = await getVoucher(voucherId);
+        const { id, num, accountDate, accountingEntries } = data;
+        const newAccountingEntries = accountingEntries.map((accountEntry: any) => {
+          const { id, summary, type, amount, labels, subjectBalance } = accountEntry;
+          const subjectBalanceIds = getFullIds(subjectBalanceOptions, subjectBalance.id);
+          return {
+            key: id,
+            summary, type, amount, subjectBalanceIds,
+            labels: labels.map((item: any) => item.name),
+          };
+        });
+        setVoucher({
+          id, num,
+          accountDate: moment(accountDate),
+          accountingEntries: newAccountingEntries,
+        });
+      } else {
+        setVoucher(initialVoucher);
+      }
+    })();
+  }, [voucherId]);
 
   const updateVoucher = (name: string, value: any) => {
     const data = { ...voucher, [name]: value };
@@ -116,33 +172,6 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
     });
     setVoucher({ ...voucher, accountingEntries: newAccountEntries });
   };
-
-  // 初始化数据
-  useEffect(() => {
-    (async () => {
-      if (voucherId) {
-        const data = await getVoucher(voucherId);
-        const { id, num, accountDate, accountingEntries } = data;
-        const newAccountingEntries = accountingEntries.map((accountEntry: any) => {
-          const { id, summary, type, amount, labels, subjectBalance } = accountEntry;
-          const subjectBalanceIds = getFullIds(subjectBalanceOptions, subjectBalance.id);
-          console.log(subjectBalanceIds)
-          return {
-            key: id,
-            summary, type, amount, subjectBalanceIds,
-            labels: labels.map((item: any) => item.name),
-          };
-        });
-        setVoucher({
-          id, num,
-          accountDate: moment(accountDate),
-          accountingEntries: newAccountingEntries,
-        });
-      } else {
-        setVoucher(initialVoucher);
-      }
-    })();
-  }, [voucherId])
 
   // 借贷金额
   const moneyAmount = (type: 'DEBIT' | 'CREDIT') => {
@@ -197,6 +226,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
       accountDate: accountDate?.format('YYYY-MM-DD'),
     };
     await insertVoucher(data);
+    message.success('保存成功');
     onSave && onSave();
   };
 

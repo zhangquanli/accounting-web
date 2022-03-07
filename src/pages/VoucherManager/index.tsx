@@ -6,9 +6,15 @@ import VoucherTemplate from "../../components/VoucherTemplate";
 import { selectVouchers } from "../../services/voucherAPI";
 import { useForm } from "antd/es/form/Form";
 
+interface VoucherTemplate {
+  visible: boolean;
+  templateName: string | undefined;
+  voucherId: number | undefined;
+}
+
 const { RangePicker } = DatePicker;
 
-const initialPagination = { current: 1, pageSize: 2 };
+const initialPagination = { current: 1, pageSize: 10 };
 
 const VoucherManager = () => {
   const columns: ColumnsType<any> = [
@@ -56,11 +62,18 @@ const VoucherManager = () => {
       render: (value, record) => {
         return (
           <>
-            <Button type="link" onClick={() => {
-              console.log(record)
-              setVoucherTemplateId(record.id);
-              setVisible(true);
-            }}>详情</Button>
+            <Button
+              type="link"
+              onClick={() => {
+                setVoucherTemplate({
+                  visible: true,
+                  templateName: '凭证详情',
+                  voucherId: record.id,
+                })
+              }}
+            >
+              详情
+            </Button>
             <Divider type="vertical" />
             <Button type="link" danger={true}>冲红</Button>
           </>
@@ -97,9 +110,13 @@ const VoucherManager = () => {
     })();
   }, []);
 
-  const [visible, setVisible] = useState<boolean>(false);
 
-  const [voucherTemplateId, setVoucherTemplateId] = useState<number | undefined>(undefined);
+  // 凭证模板
+  const [voucherTemplate, setVoucherTemplate] = useState<VoucherTemplate>({
+    visible: false,
+    voucherId: undefined,
+    templateName: undefined,
+  });
 
   return (
     <div className={styles.container}>
@@ -125,8 +142,11 @@ const VoucherManager = () => {
               <Button type="default" htmlType="reset">重置</Button>
               <Button type="primary" htmlType="submit">查询</Button>
               <Button type="primary" onClick={() => {
-                setVoucherTemplateId(undefined);
-                setVisible(true);
+                setVoucherTemplate({
+                  visible: true,
+                  templateName: '凭证新增',
+                  voucherId: undefined,
+                })
               }}>新增</Button>
             </Space>
           </Col>
@@ -144,13 +164,22 @@ const VoucherManager = () => {
         }}
       />
       <Modal
-        title="新增凭证"
+        title={voucherTemplate.templateName}
         footer={null}
         width="100vh"
-        visible={visible}
-        onCancel={() => setVisible(false)}
+        visible={voucherTemplate.visible}
+        onCancel={() => setVoucherTemplate({ ...voucherTemplate, visible: false })}
       >
-        <VoucherTemplate voucherId={voucherTemplateId} />
+        <VoucherTemplate
+          voucherId={voucherTemplate.voucherId}
+          onSave={async () => {
+            setVoucherTemplate({
+              visible: false,
+              templateName: undefined,
+              voucherId: undefined,
+            });
+            await changeVouchers(form.getFieldsValue(), searchPagination);
+          }} />
       </Modal>
     </div>
   );
