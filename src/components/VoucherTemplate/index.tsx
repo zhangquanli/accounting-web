@@ -4,10 +4,11 @@ import styles from './index.module.scss';
 import { nanoid } from "@reduxjs/toolkit";
 import { CloseCircleOutlined } from "@ant-design/icons";
 import { capitalAmount } from "../../utils/money";
-import { getVoucher, insertVoucher } from "../../services/voucherAPI";
+import { deleteVoucher, getVoucher, insertVoucher } from "../../services/voucherAPI";
 import { selectLabels } from "../../services/labelAPI";
 import moment, { Moment } from "moment";
 import { selectSubjectBalances } from "../../services/subjectBalanceAPI";
+import { useAppSelector } from "../../app/hooks";
 
 interface AccountingEntry {
   key: string;
@@ -26,6 +27,7 @@ interface Voucher {
 }
 
 const initialVoucher: Voucher = {
+  accountDate: moment(),
   accountingEntries: [
     { key: nanoid() },
     { key: nanoid() },
@@ -64,6 +66,9 @@ interface Props {
 }
 
 const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
+
+  // 激活的账簿
+  const activeAccountId = useAppSelector(state => state.userInfo.activeAccountId);
 
   // 标签数据
   const [labelOptions, setLabelOptions] = useState<any[]>([]);
@@ -224,6 +229,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
     const data = {
       num, accountingEntries: newAccountingEntries,
       accountDate: accountDate?.format('YYYY-MM-DD'),
+      account: { id: activeAccountId },
     };
     await insertVoucher(data);
     message.success('保存成功');
@@ -231,8 +237,9 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
   };
 
   // 冲红凭证
-  const invalidVoucher = async () => {
-
+  const invalidVoucher = async (voucherId: number) => {
+    await deleteVoucher(voucherId);
+    message.success('冲红成功');
     onInvalid && onInvalid();
   };
 
@@ -410,7 +417,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
       <Row style={{ marginTop: '1rem' }}>
         <Col className={styles.center} span={24}>
           {voucherId ? (
-            <Button type="link" danger={true} onClick={invalidVoucher}>冲红</Button>
+            <Button type="link" danger={true} onClick={() => invalidVoucher(voucherId)}>冲红</Button>
           ) : (
             <Button type="link" onClick={saveVoucher}>保存</Button>
           )}

@@ -5,6 +5,7 @@ import styles from './index.module.scss';
 import VoucherTemplate from "../../components/VoucherTemplate";
 import { selectVouchers } from "../../services/voucherAPI";
 import { useForm } from "antd/es/form/Form";
+import { useAppSelector } from "../../app/hooks";
 
 interface VoucherTemplate {
   visible: boolean;
@@ -88,6 +89,8 @@ const VoucherManager = () => {
 
   const [searchPagination, setSearchPagination] = useState<TablePaginationConfig>(initialPagination);
 
+  const activeAccountId = useAppSelector(state => state.userInfo.activeAccountId);
+
   const changeVouchers = async (searchParams: any, searchPagination: TablePaginationConfig) => {
     const { num, accountDateRange } = searchParams;
     const startAccountDate = accountDateRange && accountDateRange[0]
@@ -95,7 +98,7 @@ const VoucherManager = () => {
     const endAccountDate = accountDateRange && accountDateRange[1]
       && accountDateRange[1].format('YYYY-MM-DD');
     const { current: page, pageSize: size } = searchPagination;
-    const params = { num, startAccountDate, endAccountDate, page, size };
+    const params = { num, startAccountDate, endAccountDate, page, size, accountId: activeAccountId };
     const data = await selectVouchers(params);
     const { totalElements, content } = data;
     setSearchPagination(prev => {
@@ -179,7 +182,16 @@ const VoucherManager = () => {
               voucherId: undefined,
             });
             await changeVouchers(form.getFieldsValue(), searchPagination);
-          }} />
+          }}
+          onInvalid={async () => {
+            setVoucherTemplate({
+              visible: false,
+              templateName: undefined,
+              voucherId: undefined,
+            });
+            await changeVouchers(form.getFieldsValue(), searchPagination);
+          }}
+        />
       </Modal>
     </div>
   );
