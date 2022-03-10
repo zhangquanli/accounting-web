@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styles from './App.module.scss'
 import { Breadcrumb, Button, Layout, Menu, Select } from "antd";
 import { AccountBookOutlined, BankTwoTone, GroupOutlined, ScheduleOutlined } from "@ant-design/icons";
-import { Link, Route, Routes, useLocation } from "react-router-dom";
+import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import VoucherManager from "./pages/VoucherManager";
 import AccountManager from "./pages/AccountManager";
 import SubjectManager from "./pages/SubjectManager";
@@ -52,6 +52,8 @@ const App = () => {
   // 根据路由，设置选中菜单
   const location = useLocation();
   const selectedKey = location.pathname === '/' ? '/voucherManager' : location.pathname;
+
+  const navigate = useNavigate();
 
   return (
     <Layout>

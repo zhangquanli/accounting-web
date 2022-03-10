@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Col, DatePicker, Divider, Form, Input, Modal, Row, Space, Table, TablePaginationConfig } from "antd";
+import { Button, Col, DatePicker, Form, Input, Modal, Row, Space, Table, TablePaginationConfig } from "antd";
 import { ColumnsType } from "antd/es/table";
 import styles from './index.module.scss';
 import VoucherTemplate from "../../components/VoucherTemplate";
@@ -23,6 +23,26 @@ const VoucherManager = () => {
       title: '编号',
       dataIndex: 'num',
       key: 'num',
+    },
+    {
+      title: '凭证类型',
+      dataIndex: 'originalVoucher',
+      key: 'originalVoucher',
+      render: (value) => {
+        return value ? '冲红凭证' : '原始凭证';
+      },
+    },
+    {
+      title: '凭证状态',
+      dataIndex: 'invalidVoucher',
+      key: 'invalidVoucher',
+      render: (value) => {
+        return value ? (
+          <div style={{ color: 'red' }}>已冲红</div>
+        ) : (
+          <div style={{ color: 'green' }}>正常</div>
+        );
+      },
     },
     {
       title: '记账日期',
@@ -63,20 +83,32 @@ const VoucherManager = () => {
       render: (value, record) => {
         return (
           <>
-            <Button
-              type="link"
-              onClick={() => {
+            <Button type="link" onClick={() => {
+              setVoucherTemplate({
+                visible: true,
+                templateName: '凭证详情',
+                voucherId: record.id,
+              });
+            }}
+            >详情</Button>
+            {record.originalVoucher ? (
+              <Button type="link" style={{ color: 'green' }} onClick={() => {
                 setVoucherTemplate({
                   visible: true,
                   templateName: '凭证详情',
-                  voucherId: record.id,
-                })
-              }}
-            >
-              详情
-            </Button>
-            <Divider type="vertical" />
-            <Button type="link" danger={true}>冲红</Button>
+                  voucherId: record.originalVoucher.id,
+                });
+              }}>原始凭证</Button>
+            ) : null}
+            {record.invalidVoucher ? (
+              <Button type="link" style={{ color: 'red' }} onClick={() => {
+                setVoucherTemplate({
+                  visible: true,
+                  templateName: '凭证详情',
+                  voucherId: record.invalidVoucher.id,
+                });
+              }}>冲红凭证</Button>
+            ) : null}
           </>
         );
       },

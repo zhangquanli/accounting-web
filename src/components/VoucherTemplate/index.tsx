@@ -24,6 +24,8 @@ interface Voucher {
   num?: string;
   accountDate?: Moment;
   accountingEntries: AccountingEntry[];
+  invalidVoucher?: Voucher;
+  originalVoucher?: Voucher;
 }
 
 const initialVoucher: Voucher = {
@@ -90,9 +92,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
 
   useEffect(() => {
     (async () => {
-      const accountId = 12;
-      console.log('当前账簿：', accountId);
-      const subjectBalances = await selectSubjectBalances(`accountId=${accountId}`);
+      const subjectBalances = await selectSubjectBalances(`accountId=${activeAccountId}`);
       const subjectGroups: any = {};
       for (let subjectBalance of subjectBalances) {
         const { subject } = subjectBalance;
@@ -104,16 +104,18 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
       }
       const fillTree: any = (parentNum: string, subjectGroups: any) => {
         const result: any[] = subjectGroups[parentNum];
-        if (!result || result.length < 1) return undefined;
+        if (!result || result.length < 1) return null;
         return result.map(item => {
+          const { subject } = item;
           const children = fillTree(item.subject.num, subjectGroups);
-          return { ...item, children, name: item.subject.name };
+          return { ...item, children, id: subject.id, name: subject.name };
         });
       }
       const data = fillTree('0', subjectGroups);
+      console.log(data)
       setSubjectBalanceOptions(data);
     })();
-  }, [])
+  }, [activeAccountId]);
 
 
   // 记账凭证数据
@@ -124,7 +126,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
       if (voucherId) {
         // 加载详情数据
         const data = await getVoucher(voucherId);
-        const { id, num, accountDate, accountingEntries } = data;
+        const { id, num, accountDate, accountingEntries, invalidVoucher, originalVoucher } = data;
         const newAccountingEntries = accountingEntries.map((accountEntry: any) => {
           const { id, summary, type, amount, labels, subjectBalance } = accountEntry;
           const subjectBalanceIds = getFullIds(subjectBalanceOptions, subjectBalance.id);
@@ -135,7 +137,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
           };
         });
         setVoucher({
-          id, num,
+          id, num, invalidVoucher, originalVoucher,
           accountDate: moment(accountDate),
           accountingEntries: newAccountingEntries,
         });
@@ -143,7 +145,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
         setVoucher(initialVoucher);
       }
     })();
-  }, [voucherId]);
+  }, [voucherId, subjectBalanceOptions]);
 
   const updateVoucher = (name: string, value: any) => {
     const data = { ...voucher, [name]: value };
@@ -185,7 +187,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
       .reduce((prev, current) => {
         return (prev ? prev : 0) + (current ? current : 0);
       }, 0);
-    return (amount && amount > 0) ? amount : undefined;
+    return amount ? amount : undefined;
   };
 
   const debitAmount = moneyAmount('DEBIT');
@@ -237,10 +239,12 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
   };
 
   // 冲红凭证
-  const invalidVoucher = async (voucherId: number) => {
-    await deleteVoucher(voucherId);
-    message.success('冲红成功');
-    onInvalid && onInvalid();
+  const invalidVoucher = async (voucherId: number | undefined) => {
+    if (voucherId) {
+      await deleteVoucher(voucherId);
+      message.success('冲红成功');
+      onInvalid && onInvalid();
+    }
   };
 
   return (
@@ -392,7 +396,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
         <Col className={`${styles.border} ${styles.center}`} span={8}>合计</Col>
         <Col className={`${styles.border} ${styles.center}`} span={10}>
           {(debitAmount && creditAmount && debitAmount === creditAmount) ? (
-            <div style={{ color: "green" }}>{capitalAmount(debitAmount)}</div>
+            <div style={{ color: "green" }}>{capitalAmount(Math.abs(debitAmount))}</div>
           ) : (
             <div style={{ color: "red" }}>借贷不平</div>
           )}
@@ -416,11 +420,12 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
       </Row>
       <Row style={{ marginTop: '1rem' }}>
         <Col className={styles.center} span={24}>
-          {voucherId ? (
+          {/*新增凭证时，显示保存按钮*/}
+          {!voucher.id ? (<Button type="link" onClick={saveVoucher}>保存</Button>) : null}
+          {/*查看凭证时，显示冲红按钮*/}
+          {(voucher.id && !(voucher.invalidVoucher || voucher.originalVoucher)) ? (
             <Button type="link" danger={true} onClick={() => invalidVoucher(voucherId)}>冲红</Button>
-          ) : (
-            <Button type="link" onClick={saveVoucher}>保存</Button>
-          )}
+          ) : null}
         </Col>
       </Row>
     </div>
