@@ -15,7 +15,7 @@ interface AccountingEntry {
   summary?: string;
   type?: 'DEBIT' | 'CREDIT';
   amount?: number;
-  subjectBalanceIds?: number[];
+  subjectIds?: number[];
   labels?: string[];
 }
 
@@ -34,31 +34,6 @@ const initialVoucher: Voucher = {
     { key: nanoid() },
     { key: nanoid() },
   ]
-};
-
-const deepSearch = (options: any[], id: number, ids: any[]) => {
-  if (options && options.length > 0) {
-    for (let option of options) {
-      ids.push(option.id);
-      if (option.children && option.children.length > 0) {
-        deepSearch(option.children, id, ids);
-        if (ids.includes(id)) {
-          break;
-        }
-      }
-      if (option.id === id) {
-        break;
-      } else {
-        ids.pop();
-      }
-    }
-  }
-}
-
-const getFullIds = (options: any[], id: number) => {
-  const ids: any[] = [];
-  deepSearch(options, id, ids);
-  return ids;
 };
 
 interface Props {
@@ -123,16 +98,39 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
 
   useEffect(() => {
     (async () => {
+      const deepSearch = (options: any[], id: number, ids: any[]) => {
+        if (options && options.length > 0) {
+          for (let option of options) {
+            ids.push(option.subject.id);
+            if (option.children && option.children.length > 0) {
+              deepSearch(option.children, id, ids);
+              if (ids.includes(id)) {
+                break;
+              }
+            }
+            if (option.subject.id === id) {
+              break;
+            } else {
+              ids.pop();
+            }
+          }
+        }
+      }
+      const getFullIds = (options: any[], id: number) => {
+        const ids: any[] = [];
+        deepSearch(options, id, ids);
+        return ids;
+      };
       if (voucherId) {
         // 加载详情数据
         const data = await getVoucher(voucherId);
         const { id, num, accountDate, accountingEntries, invalidVoucher, originalVoucher } = data;
         const newAccountingEntries = accountingEntries.map((accountEntry: any) => {
           const { id, summary, type, amount, labels, subjectBalance } = accountEntry;
-          const subjectBalanceIds = getFullIds(subjectBalanceOptions, subjectBalance.id);
+          const subjectIds = getFullIds(subjectBalanceOptions, subjectBalance.subject.id);
           return {
             key: id,
-            summary, type, amount, subjectBalanceIds,
+            summary, type, amount, subjectIds,
             labels: labels.map((item: any) => item.name),
           };
         });
@@ -215,16 +213,19 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
     }
 
     const newAccountingEntries = voucher.accountingEntries.filter(item => {
-      const { amount, subjectBalanceIds } = item;
-      return amount && amount > 0 && subjectBalanceIds && subjectBalanceIds.length > 0;
+      const { amount, subjectIds } = item;
+      return amount && amount > 0 && subjectIds && subjectIds.length > 0;
     }).map(item => {
-      const { amount, type, summary, subjectBalanceIds, labels } = item;
+      const { amount, type, summary, subjectIds, labels } = item;
       const newLabels = labels && labels.map((name: any) => ({ name }));
       return {
         amount, type, summary,
         labels: newLabels,
         subjectBalance: {
-          id: subjectBalanceIds && subjectBalanceIds[subjectBalanceIds.length - 1],
+          id: subjectIds && subjectIds[subjectIds.length - 1],
+          subject: {
+            id: subjectIds && subjectIds[subjectIds.length - 1],
+          },
         },
       };
     });
@@ -326,14 +327,14 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
               changeOnSelect={true}
               fieldNames={{ label: 'name', value: 'id' }}
               options={subjectBalanceOptions}
-              value={item.subjectBalanceIds}
+              value={item.subjectIds}
               showSearch={{
                 filter: (inputValue, options) => {
                   return options.some((option: any) => option.name.indexOf(inputValue.toLowerCase()) > -1);
                 }
               }}
               onChange={(value: any) => {
-                updateAccountEntry(item.key, [{ name: 'subjectBalanceIds', value }]);
+                updateAccountEntry(item.key, [{ name: 'subjectIds', value }]);
               }}
               disabled={voucherId !== undefined}
               displayRender={(nodes, selectedOptions) => {
