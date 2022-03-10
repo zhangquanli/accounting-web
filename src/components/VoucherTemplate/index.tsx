@@ -54,9 +54,9 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
     (async () => {
       const data = await selectLabels();
       const options = data.map((item: any) => {
-        const { name } = item;
-        return { value: name, label: name };
-      })
+        const { name, value, mark } = item;
+        return { value: mark, label: mark, labelName: name, labelValue: value };
+      });
       setLabelOptions(options);
     })();
   }, []);
@@ -87,7 +87,6 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
         });
       }
       const data = fillTree('0', subjectGroups);
-      console.log(data)
       setSubjectBalanceOptions(data);
     })();
   }, [activeAccountId]);
@@ -97,30 +96,30 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
   const [voucher, setVoucher] = useState<Voucher>(initialVoucher);
 
   useEffect(() => {
-    (async () => {
-      const deepSearch = (options: any[], id: number, ids: any[]) => {
-        if (options && options.length > 0) {
-          for (let option of options) {
-            ids.push(option.subject.id);
-            if (option.children && option.children.length > 0) {
-              deepSearch(option.children, id, ids);
-              if (ids.includes(id)) {
-                break;
-              }
-            }
-            if (option.subject.id === id) {
+    const deepSearch = (options: any[], id: number, ids: any[]) => {
+      if (options && options.length > 0) {
+        for (let option of options) {
+          ids.push(option.subject.id);
+          if (option.children && option.children.length > 0) {
+            deepSearch(option.children, id, ids);
+            if (ids.includes(id)) {
               break;
-            } else {
-              ids.pop();
             }
+          }
+          if (option.subject.id === id) {
+            break;
+          } else {
+            ids.pop();
           }
         }
       }
-      const getFullIds = (options: any[], id: number) => {
-        const ids: any[] = [];
-        deepSearch(options, id, ids);
-        return ids;
-      };
+    }
+    const getFullIds = (options: any[], id: number) => {
+      const ids: any[] = [];
+      deepSearch(options, id, ids);
+      return ids;
+    };
+    (async () => {
       if (voucherId) {
         // 加载详情数据
         const data = await getVoucher(voucherId);
@@ -131,7 +130,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
           return {
             key: id,
             summary, type, amount, subjectIds,
-            labels: labels.map((item: any) => item.name),
+            labels: labels.map((label: any) => label.mark),
           };
         });
         setVoucher({
@@ -217,7 +216,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
       return amount && amount > 0 && subjectIds && subjectIds.length > 0;
     }).map(item => {
       const { amount, type, summary, subjectIds, labels } = item;
-      const newLabels = labels && labels.map((name: any) => ({ name }));
+      const newLabels = labels && labels.map((mark: string) => ({ mark }));
       return {
         amount, type, summary,
         labels: newLabels,
@@ -278,10 +277,10 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
       </Row>
       <Row style={{ marginTop: '1rem' }}>
         <Col className={`${styles.border} ${styles.center}`} span={4}>摘要</Col>
-        <Col className={`${styles.border} ${styles.center}`} span={4}>标签</Col>
-        <Col className={`${styles.border} ${styles.center}`} span={10}>会计科目</Col>
-        <Col className={`${styles.border} ${styles.center}`} span={3}>借方金额</Col>
-        <Col className={`${styles.border} ${styles.center}`} span={3}>贷方金额</Col>
+        <Col className={`${styles.border} ${styles.center}`} span={8}>标签</Col>
+        <Col className={`${styles.border} ${styles.center}`} span={8}>会计科目</Col>
+        <Col className={`${styles.border} ${styles.center}`} span={2}>借方金额</Col>
+        <Col className={`${styles.border} ${styles.center}`} span={2}>贷方金额</Col>
       </Row>
       {voucher.accountingEntries.map(item => (
         <Row key={item.key}>
@@ -305,21 +304,38 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
             />
           </Col>
           {/*标签*/}
-          <Col className={`${styles.border} ${styles.center}`} span={4}>
+          <Col className={`${styles.border} ${styles.center}`} span={8}>
             <Select
               style={{ width: '100%' }}
               bordered={false}
               mode="tags"
               options={labelOptions}
               value={item.labels}
-              onChange={value => {
+              onChange={(value) => {
                 updateAccountEntry(item.key, [{ name: 'labels', value }])
+              }}
+              onSelect={(value) => {
+                if (!value.includes('-')) {
+                  const newLabels = item.labels ? [...item.labels] : [];
+                  updateAccountEntry(item.key, [{ name: 'labels', value: newLabels }]);
+                  message.destroy();
+                  message.error('输入的标签必须以\'-\'分割').then(undefined);
+                  return;
+                }
+                if (item.labels && item.labels.length > 0) {
+                  const newLabels = item.labels.filter(mark =>
+                    (mark.split('-')[0]) !== (value.split('-')[0]));
+                  newLabels.push(value);
+                  updateAccountEntry(item.key, [{ name: 'labels', value: newLabels }]);
+                  message.destroy();
+                  message.info('同类型标签选中后，自动切换').then(undefined);
+                }
               }}
               disabled={voucherId !== undefined}
             />
           </Col>
           {/*会计科目*/}
-          <Col className={`${styles.border} ${styles.center}`} span={10}>
+          <Col className={`${styles.border} ${styles.center}`} span={8}>
             <Cascader
               style={{ width: '100%' }}
               bordered={false}
@@ -353,7 +369,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
             />
           </Col>
           {/*借方金额*/}
-          <Col className={`${styles.border} ${styles.center}`} span={3}>
+          <Col className={`${styles.border} ${styles.center}`} span={2}>
             <InputNumber
               style={{ width: '100%' }}
               bordered={false}
@@ -369,7 +385,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
             />
           </Col>
           {/*贷方金额*/}
-          <Col className={`${styles.border} ${styles.center}`} span={3}>
+          <Col className={`${styles.border} ${styles.center}`} span={2}>
             <InputNumber
               style={{ width: '100%' }}
               bordered={false}
@@ -394,15 +410,15 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
         </Row>
       )}
       <Row>
-        <Col className={`${styles.border} ${styles.center}`} span={8}>合计</Col>
-        <Col className={`${styles.border} ${styles.center}`} span={10}>
+        <Col className={`${styles.border} ${styles.center}`} span={12}>合计</Col>
+        <Col className={`${styles.border} ${styles.center}`} span={8}>
           {(debitAmount && creditAmount && debitAmount === creditAmount) ? (
             <div style={{ color: "green" }}>{capitalAmount(Math.abs(debitAmount))}</div>
           ) : (
             <div style={{ color: "red" }}>借贷不平</div>
           )}
         </Col>
-        <Col className={`${styles.border} ${styles.center}`} span={3}>
+        <Col className={`${styles.border} ${styles.center}`} span={2}>
           <InputNumber
             style={{ width: '100%' }}
             bordered={false}
@@ -410,7 +426,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
             value={debitAmount}
           />
         </Col>
-        <Col className={`${styles.border} ${styles.center}`} span={3}>
+        <Col className={`${styles.border} ${styles.center}`} span={2}>
           <InputNumber
             style={{ width: '100%' }}
             bordered={false}

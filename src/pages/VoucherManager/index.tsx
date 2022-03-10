@@ -188,6 +188,7 @@ const VoucherManager = () => {
         </Row>
       </Form>
       <Table
+        scroll={{ y: 400 }}
         rowKey="id"
         columns={columns}
         dataSource={vouchers}
@@ -201,7 +202,7 @@ const VoucherManager = () => {
       <Modal
         title={voucherTemplate.templateName}
         footer={null}
-        width="100vh"
+        width="1000px"
         visible={voucherTemplate.visible}
         onCancel={() => setVoucherTemplate({ ...voucherTemplate, visible: false })}
       >
