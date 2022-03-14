@@ -2,6 +2,7 @@
   "name": "accounting-web",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:9324",
   "dependencies": {
     "@ant-design/icons": "^4.7.0",
     "@reduxjs/toolkit": "^1.7.1",

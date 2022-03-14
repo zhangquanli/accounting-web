@@ -46,9 +46,11 @@ const AccountManager = () => {
   };
   useEffect(() => {
     (async () => {
-      await changeAccounts();
+      const values = queryForm.getFieldsValue();
+      const data = await selectAccounts(values);
+      setAccounts(data);
     })();
-  }, []);
+  }, [queryForm]);
 
   // 新增账簿
   const [saveForm] = useForm();

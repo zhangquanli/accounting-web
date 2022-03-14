@@ -7,7 +7,7 @@ import { selectVouchers } from "../../services/voucherAPI";
 import { useForm } from "antd/es/form/Form";
 import { useAppSelector } from "../../app/hooks";
 
-interface VoucherTemplate {
+interface ModalProps {
   visible: boolean;
   templateName: string | undefined;
   voucherId: number | undefined;
@@ -15,9 +15,9 @@ interface VoucherTemplate {
 
 const { RangePicker } = DatePicker;
 
-const initialPagination = { current: 1, pageSize: 10 };
-
 const VoucherManager = () => {
+  const activeAccountId = useAppSelector(state => state.userInfo.activeAccountId);
+
   const columns: ColumnsType<any> = [
     {
       title: '编号',
@@ -84,7 +84,7 @@ const VoucherManager = () => {
         return (
           <>
             <Button type="link" onClick={() => {
-              setVoucherTemplate({
+              setModalProps({
                 visible: true,
                 templateName: '凭证详情',
                 voucherId: record.id,
@@ -93,7 +93,7 @@ const VoucherManager = () => {
             >详情</Button>
             {record.originalVoucher ? (
               <Button type="link" style={{ color: 'green' }} onClick={() => {
-                setVoucherTemplate({
+                setModalProps({
                   visible: true,
                   templateName: '凭证详情',
                   voucherId: record.originalVoucher.id,
@@ -102,7 +102,7 @@ const VoucherManager = () => {
             ) : null}
             {record.invalidVoucher ? (
               <Button type="link" style={{ color: 'red' }} onClick={() => {
-                setVoucherTemplate({
+                setModalProps({
                   visible: true,
                   templateName: '凭证详情',
                   voucherId: record.invalidVoucher.id,
@@ -115,39 +115,42 @@ const VoucherManager = () => {
     }
   ];
 
-  const [vouchers, setVouchers] = useState<any[]>([]);
-
   const [form] = useForm();
 
-  const [searchPagination, setSearchPagination] = useState<TablePaginationConfig>(initialPagination);
+  const [searchParams, setSearchParams] = useState<any>({});
 
-  const activeAccountId = useAppSelector(state => state.userInfo.activeAccountId);
+  const [vouchers, setVouchers] = useState<any[]>([]);
 
-  const changeVouchers = async (searchParams: any, searchPagination: TablePaginationConfig) => {
-    const { num, accountDateRange } = searchParams;
-    const startAccountDate = accountDateRange && accountDateRange[0]
-      && accountDateRange[0].format('YYYY-MM-DD');
-    const endAccountDate = accountDateRange && accountDateRange[1]
-      && accountDateRange[1].format('YYYY-MM-DD');
-    const { current: page, pageSize: size } = searchPagination;
-    const params = { num, startAccountDate, endAccountDate, page, size, accountId: activeAccountId };
-    const data = await selectVouchers(params);
-    const { totalElements, content } = data;
-    setSearchPagination(prev => {
-      return { ...prev, total: totalElements };
-    });
-    setVouchers(content);
-  };
+  const [total, setTotal] = useState<number>(0);
+
+  const [pagination, setPagination] = useState<TablePaginationConfig>({
+    current: 1,
+    pageSize: 5,
+  });
 
   useEffect(() => {
     (async () => {
-      await changeVouchers({}, initialPagination);
+      const { current: page, pageSize: size } = pagination;
+      const { num, accountDateRange } = searchParams;
+      const startAccountDate = accountDateRange && accountDateRange[0]
+        && accountDateRange[0].format('YYYY-MM-DD');
+      const endAccountDate = accountDateRange && accountDateRange[1]
+        && accountDateRange[1].format('YYYY-MM-DD');
+      const params = {
+        page, size,
+        accountId: activeAccountId,
+        num, startAccountDate, endAccountDate,
+      };
+      const data = await selectVouchers(params);
+      const { totalElements, content } = data;
+      setTotal(totalElements);
+      setVouchers(content);
     })();
-  }, []);
+  }, [activeAccountId, searchParams, pagination]);
 
 
   // 凭证模板
-  const [voucherTemplate, setVoucherTemplate] = useState<VoucherTemplate>({
+  const [modalProps, setModalProps] = useState<ModalProps>({
     visible: false,
     voucherId: undefined,
     templateName: undefined,
@@ -157,9 +160,7 @@ const VoucherManager = () => {
     <div className={styles.container}>
       <Form
         form={form}
-        onFinish={async (values) => {
-          await changeVouchers(values, searchPagination);
-        }}
+        onFinish={(values) => setSearchParams({ ...searchParams, ...values })}
       >
         <Row gutter={16}>
           <Col span={4}>
@@ -177,7 +178,7 @@ const VoucherManager = () => {
               <Button type="default" htmlType="reset">重置</Button>
               <Button type="primary" htmlType="submit">查询</Button>
               <Button type="primary" onClick={() => {
-                setVoucherTemplate({
+                setModalProps({
                   visible: true,
                   templateName: '凭证新增',
                   voucherId: undefined,
@@ -192,37 +193,33 @@ const VoucherManager = () => {
         rowKey="id"
         columns={columns}
         dataSource={vouchers}
-        pagination={searchPagination}
-        onChange={async pagination => {
-          const newPagination = { ...searchPagination, ...pagination };
-          setSearchPagination(newPagination);
-          await changeVouchers(form.getFieldsValue(), newPagination);
-        }}
+        pagination={{ ...pagination, total }}
+        onChange={(values) => setPagination({ ...values })}
       />
       <Modal
-        title={voucherTemplate.templateName}
+        title={modalProps.templateName}
         footer={null}
         width="1000px"
-        visible={voucherTemplate.visible}
-        onCancel={() => setVoucherTemplate({ ...voucherTemplate, visible: false })}
+        visible={modalProps.visible}
+        onCancel={() => setModalProps({ ...modalProps, visible: false })}
       >
         <VoucherTemplate
-          voucherId={voucherTemplate.voucherId}
-          onSave={async () => {
-            setVoucherTemplate({
+          voucherId={modalProps.voucherId}
+          onSave={() => {
+            setModalProps({
               visible: false,
               templateName: undefined,
               voucherId: undefined,
             });
-            await changeVouchers(form.getFieldsValue(), searchPagination);
+            setSearchParams({ ...searchParams });
           }}
-          onInvalid={async () => {
-            setVoucherTemplate({
+          onInvalid={() => {
+            setModalProps({
               visible: false,
               templateName: undefined,
               voucherId: undefined,
             });
-            await changeVouchers(form.getFieldsValue(), searchPagination);
+            setSearchParams({ ...searchParams });
           }}
         />
       </Modal>

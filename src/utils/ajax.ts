@@ -3,7 +3,7 @@ import { message } from "antd";
 
 // 创建 axios 对象
 const myAxios = axios.create({
-  baseURL: 'http://localhost:9324/api/v1',
+  baseURL: '/api/v1',
 });
 
 // 添加请求拦截器

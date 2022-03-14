@@ -314,7 +314,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
               onChange={(value) => {
                 updateAccountEntry(item.key, [{ name: 'labels', value }])
               }}
-              onSelect={(value) => {
+              onSelect={(value:any) => {
                 if (!value.includes('-')) {
                   const newLabels = item.labels ? [...item.labels] : [];
                   updateAccountEntry(item.key, [{ name: 'labels', value: newLabels }]);
@@ -353,8 +353,8 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
                 updateAccountEntry(item.key, [{ name: 'subjectIds', value }]);
               }}
               disabled={voucherId !== undefined}
-              displayRender={(nodes, selectedOptions) => {
-                return selectedOptions.map((option: any, index) => {
+              displayRender={(nodes, selectedOptions:any) => {
+                return selectedOptions.map((option: any, index:number) => {
                   if (index === selectedOptions.length - 1) {
                     return (
                       <span key={option.id}>
