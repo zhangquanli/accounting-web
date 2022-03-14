@@ -68,7 +68,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
   useEffect(() => {
     (async () => {
       if (activeAccountId) {
-        const subjectBalances = await selectSubjectBalances(activeAccountId);
+        const subjectBalances = await selectSubjectBalances({ accountId: activeAccountId, isRecursion: true });
         const subjectGroups: any = {};
         for (let subjectBalance of subjectBalances) {
           const { subject } = subjectBalance;
