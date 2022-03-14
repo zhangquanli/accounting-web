@@ -31,8 +31,13 @@ class Ajax {
     if (data) {
       url = url + '?';
       for (let key of Object.keys(data)) {
-        if (data[key]) {
-          url = url + `${key}=${data[key]}&`;
+        const value = data[key];
+        if (value) {
+          if (value instanceof Array) {
+            url = url + `${key}=${value.join(',')}&`;
+          } else {
+            url = url + `${key}=${value}&`;
+          }
         }
       }
       url = url.substring(0, url.length - 1);

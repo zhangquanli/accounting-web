@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styles from './App.module.scss'
 import { Breadcrumb, Button, Layout, Menu, Select } from "antd";
 import { AccountBookOutlined, BankTwoTone, GroupOutlined, ScheduleOutlined } from "@ant-design/icons";
-import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Link, Route, Routes, useLocation } from "react-router-dom";
 import VoucherManager from "./pages/VoucherManager";
 import AccountManager from "./pages/AccountManager";
 import SubjectManager from "./pages/SubjectManager";
@@ -16,6 +16,11 @@ const menus = [
   {
     name: '凭证管理',
     url: '/voucherManager',
+    icon: <ScheduleOutlined />,
+  },
+  {
+    name: '会计分录管理',
+    url: '/accountingEntryManager',
     icon: <ScheduleOutlined />,
   },
   {
@@ -47,13 +52,11 @@ const App = () => {
   useEffect(() => {
     // TODO 获取用户选择的默认账簿
     dispatch(updateActiveAccountId(accounts[accounts.length - 1]?.id));
-  }, [accounts]);
+  }, [accounts, dispatch]);
 
   // 根据路由，设置选中菜单
   const location = useLocation();
   const selectedKey = location.pathname === '/' ? '/voucherManager' : location.pathname;
-
-  const navigate = useNavigate();
 
   return (
     <Layout>

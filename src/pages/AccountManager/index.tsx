@@ -6,36 +6,9 @@ import { useForm } from "antd/es/form/Form";
 import { ColumnsType } from "antd/es/table";
 import { selectSubjects } from "../../services/subjectAPI";
 import Search from "antd/lib/input/Search";
+import { selectSubjectBalances } from "../../services/subjectBalanceAPI";
 
 const AccountManager = () => {
-  const columns: ColumnsType<any> = [
-    {
-      title: '名称',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: '操作',
-      dataIndex: 'operation',
-      key: 'operation',
-      render: (value, record) => {
-        return (
-          <Space>
-            <Button
-              type="primary"
-              onClick={() => {
-                setSubjectsVisible(true);
-                setSelectedAccount(record);
-              }}
-            >
-              管理科目
-            </Button>
-          </Space>
-        );
-      },
-    },
-  ];
-
   // 账簿数据
   const [queryForm] = useForm();
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -64,17 +37,20 @@ const AccountManager = () => {
   const [subjectsVisible, setSubjectsVisible] = useState<boolean>(false);
   const [selectedAccount, setSelectedAccount] = useState<any>({});
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<number[]>([]);
-  useEffect(() => {
-    const data = (selectedAccount.subjectBalances || []).map((item: any) => item.subject.id);
-    setSelectedSubjectIds(data);
-  }, [selectedAccount]);
   const [initialBalances, setInitialBalances] = useState<any>({});
   useEffect(() => {
-    const data: any = {};
-    for (let element of (selectedAccount.subjectBalances || [])) {
-      data[element.subject.id] = element.initialAmount;
-    }
-    setInitialBalances(data);
+    (async () => {
+      if (selectedAccount && selectedAccount.id) {
+        const subjectBalances = await selectSubjectBalances({ accountId: selectedAccount.id });
+        const selectedSubjectIds = (subjectBalances || []).map((item: any) => item.subject.id);
+        setSelectedSubjectIds(selectedSubjectIds);
+        const initialBalances: any = {};
+        for (let element of (subjectBalances || [])) {
+          initialBalances[element.subject.id] = element.initialAmount;
+        }
+        setInitialBalances(initialBalances);
+      }
+    })();
   }, [selectedAccount]);
 
   // 会计科目数据
@@ -87,29 +63,61 @@ const AccountManager = () => {
   }, []);
 
   const [subjectTree, setSubjectTree] = useState<any[]>();
+
   useEffect(() => {
-    const subjectGroups: any = {};
-    for (let subject of subjects) {
-      if (Object.keys(subjectGroups).includes(subject.parentNum)) {
-        subjectGroups[subject.parentNum].push(subject);
-      } else {
-        subjectGroups[subject.parentNum] = [subject];
+    (async () => {
+      const subjectGroups: any = {};
+      for (let subject of subjects) {
+        if (Object.keys(subjectGroups).includes(subject.parentNum)) {
+          subjectGroups[subject.parentNum].push(subject);
+        } else {
+          subjectGroups[subject.parentNum] = [subject];
+        }
       }
-    }
-    const toTree: any = (parentNum: string, subjectGroups: any) => {
-      const result: any[] = subjectGroups[parentNum];
-      if (!result || result.length < 1) {
-        return undefined;
-      }
-      return result.map(item => {
-        const children = toTree(item.num, subjectGroups);
-        const disableCheckbox = (selectedAccount.subjectBalances || []).map((item: any) => item.subject.id).includes(item.id);
-        return { ...item, children, disableCheckbox };
-      });
-    };
-    const data = toTree('0', subjectGroups);
-    setSubjectTree(data);
+      const subjectBalances = await selectSubjectBalances({ accountId: selectedAccount.id });
+      const toTree: any = (parentNum: string, subjectGroups: any) => {
+        const result: any[] = subjectGroups[parentNum];
+        if (!result || result.length < 1) {
+          return undefined;
+        }
+        return result.map(item => {
+          const children = toTree(item.num, subjectGroups);
+          const disableCheckbox = (subjectBalances || []).map((item: any) => item.subject.id).includes(item.id);
+          return { ...item, children, disableCheckbox };
+        });
+      };
+      const data = toTree('0', subjectGroups);
+      setSubjectTree(data);
+    })();
   }, [subjects, selectedAccount]);
+
+  const columns: ColumnsType<any> = [
+    {
+      title: '名称',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: '操作',
+      dataIndex: 'operation',
+      key: 'operation',
+      render: (value, record) => {
+        return (
+          <Space>
+            <Button
+              type="primary"
+              onClick={() => {
+                setSubjectsVisible(true);
+                setSelectedAccount(record);
+              }}
+            >
+              管理科目
+            </Button>
+          </Space>
+        );
+      },
+    },
+  ];
 
   return (
     <div className={styles.container}>

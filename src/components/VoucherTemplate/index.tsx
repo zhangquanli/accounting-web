@@ -67,27 +67,29 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
 
   useEffect(() => {
     (async () => {
-      const subjectBalances = await selectSubjectBalances(`accountId=${activeAccountId}`);
-      const subjectGroups: any = {};
-      for (let subjectBalance of subjectBalances) {
-        const { subject } = subjectBalance;
-        if (Object.keys(subjectGroups).includes(subject.parentNum)) {
-          subjectGroups[subject.parentNum].push(subjectBalance);
-        } else {
-          subjectGroups[subject.parentNum] = [subjectBalance];
+      if (activeAccountId) {
+        const subjectBalances = await selectSubjectBalances(activeAccountId);
+        const subjectGroups: any = {};
+        for (let subjectBalance of subjectBalances) {
+          const { subject } = subjectBalance;
+          if (Object.keys(subjectGroups).includes(subject.parentNum)) {
+            subjectGroups[subject.parentNum].push(subjectBalance);
+          } else {
+            subjectGroups[subject.parentNum] = [subjectBalance];
+          }
         }
+        const fillTree: any = (parentNum: string, subjectGroups: any) => {
+          const result: any[] = subjectGroups[parentNum];
+          if (!result || result.length < 1) return null;
+          return result.map(item => {
+            const { subject } = item;
+            const children = fillTree(item.subject.num, subjectGroups);
+            return { ...item, children, id: subject.id, name: subject.name };
+          });
+        }
+        const data = fillTree('0', subjectGroups);
+        setSubjectBalanceOptions(data);
       }
-      const fillTree: any = (parentNum: string, subjectGroups: any) => {
-        const result: any[] = subjectGroups[parentNum];
-        if (!result || result.length < 1) return null;
-        return result.map(item => {
-          const { subject } = item;
-          const children = fillTree(item.subject.num, subjectGroups);
-          return { ...item, children, id: subject.id, name: subject.name };
-        });
-      }
-      const data = fillTree('0', subjectGroups);
-      setSubjectBalanceOptions(data);
     })();
   }, [activeAccountId]);
 
@@ -314,7 +316,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
               onChange={(value) => {
                 updateAccountEntry(item.key, [{ name: 'labels', value }])
               }}
-              onSelect={(value:any) => {
+              onSelect={(value: any) => {
                 if (!value.includes('-')) {
                   const newLabels = item.labels ? [...item.labels] : [];
                   updateAccountEntry(item.key, [{ name: 'labels', value: newLabels }]);
@@ -353,8 +355,8 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
                 updateAccountEntry(item.key, [{ name: 'subjectIds', value }]);
               }}
               disabled={voucherId !== undefined}
-              displayRender={(nodes, selectedOptions:any) => {
-                return selectedOptions.map((option: any, index:number) => {
+              displayRender={(nodes, selectedOptions: any) => {
+                return selectedOptions.map((option: any, index: number) => {
                   if (index === selectedOptions.length - 1) {
                     return (
                       <span key={option.id}>
