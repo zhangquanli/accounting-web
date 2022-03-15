@@ -9,6 +9,7 @@ import { selectLabels } from "../../services/labelAPI";
 import moment, { Moment } from "moment";
 import { selectSubjectBalances } from "../../services/subjectBalanceAPI";
 import { useAppSelector } from "../../app/hooks";
+import { array2Tree, searchTreeIds } from "../../utils/tree";
 
 interface AccountingEntry {
   key: string;
@@ -68,26 +69,13 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
   useEffect(() => {
     (async () => {
       if (activeAccountId) {
-        const subjectBalances = await selectSubjectBalances({ accountId: activeAccountId, isRecursion: true });
-        const subjectGroups: any = {};
-        for (let subjectBalance of subjectBalances) {
-          const { subject } = subjectBalance;
-          if (Object.keys(subjectGroups).includes(subject.parentNum)) {
-            subjectGroups[subject.parentNum].push(subjectBalance);
-          } else {
-            subjectGroups[subject.parentNum] = [subjectBalance];
-          }
-        }
-        const fillTree: any = (parentNum: string, subjectGroups: any) => {
-          const result: any[] = subjectGroups[parentNum];
-          if (!result || result.length < 1) return null;
-          return result.map(item => {
-            const { subject } = item;
-            const children = fillTree(item.subject.num, subjectGroups);
-            return { ...item, children, id: subject.id, name: subject.name };
-          });
-        }
-        const data = fillTree('0', subjectGroups);
+        const params = { accountId: activeAccountId, isRecursion: true };
+        const subjectBalances = await selectSubjectBalances(params);
+        const newSubjectBalances = subjectBalances.map((subjectBalance: any) => {
+          const { id, name, num, parentNum } = subjectBalance.subject;
+          return { ...subjectBalance, id, name, num, parentNum };
+        });
+        const data = array2Tree(newSubjectBalances, 'num', 'parentNum');
         setSubjectBalanceOptions(data);
       }
     })();
@@ -98,29 +86,6 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
   const [voucher, setVoucher] = useState<Voucher>(initialVoucher);
 
   useEffect(() => {
-    const deepSearch = (options: any[], id: number, ids: any[]) => {
-      if (options && options.length > 0) {
-        for (let option of options) {
-          ids.push(option.subject.id);
-          if (option.children && option.children.length > 0) {
-            deepSearch(option.children, id, ids);
-            if (ids.includes(id)) {
-              break;
-            }
-          }
-          if (option.subject.id === id) {
-            break;
-          } else {
-            ids.pop();
-          }
-        }
-      }
-    }
-    const getFullIds = (options: any[], id: number) => {
-      const ids: any[] = [];
-      deepSearch(options, id, ids);
-      return ids;
-    };
     (async () => {
       if (voucherId) {
         // 加载详情数据
@@ -128,7 +93,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
         const { id, num, accountDate, accountingEntries, invalidVoucher, originalVoucher } = data;
         const newAccountingEntries = accountingEntries.map((accountEntry: any) => {
           const { id, summary, type, amount, labels, subjectBalance } = accountEntry;
-          const subjectIds = getFullIds(subjectBalanceOptions, subjectBalance.subject.id);
+          const subjectIds = searchTreeIds(subjectBalanceOptions, 'id', 'children', subjectBalance.subject.id);
           return {
             key: id,
             summary, type, amount, subjectIds,

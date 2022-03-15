@@ -7,6 +7,7 @@ import { ColumnsType } from "antd/es/table";
 import { selectSubjects } from "../../services/subjectAPI";
 import Search from "antd/lib/input/Search";
 import { selectSubjectBalances } from "../../services/subjectBalanceAPI";
+import { array2Tree } from "../../utils/tree";
 
 const AccountManager = () => {
   // 账簿数据
@@ -66,28 +67,14 @@ const AccountManager = () => {
 
   useEffect(() => {
     (async () => {
-      const subjectGroups: any = {};
-      for (let subject of subjects) {
-        if (Object.keys(subjectGroups).includes(subject.parentNum)) {
-          subjectGroups[subject.parentNum].push(subject);
-        } else {
-          subjectGroups[subject.parentNum] = [subject];
-        }
-      }
       const subjectBalances = await selectSubjectBalances({ accountId: selectedAccount.id });
-      const toTree: any = (parentNum: string, subjectGroups: any) => {
-        const result: any[] = subjectGroups[parentNum];
-        if (!result || result.length < 1) {
-          return undefined;
-        }
-        return result.map(item => {
-          const children = toTree(item.num, subjectGroups);
-          const disableCheckbox = (subjectBalances || []).map((item: any) => item.subject.id).includes(item.id);
-          return { ...item, children, disableCheckbox };
-        });
-      };
-      const data = toTree('0', subjectGroups);
-      setSubjectTree(data);
+      const ids = (subjectBalances || []).map((subjectBalance: any) => subjectBalance.subject.id);
+      const newSubjects = subjects.map(subject => {
+        const disableCheckbox = ids.includes(subject.id);
+        return { ...subject, disableCheckbox, selectable: false };
+      })
+      const tree = array2Tree(newSubjects, 'num', 'parentNum');
+      setSubjectTree(tree);
     })();
   }, [subjects, selectedAccount]);
 

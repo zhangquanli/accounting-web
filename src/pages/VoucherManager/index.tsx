@@ -55,9 +55,13 @@ const VoucherManager = () => {
       key: 'debitAmount',
       render: (value, record) => {
         const accountingEntries: any[] = record.accountingEntries;
-        return accountingEntries.filter((item: any) => item.type === 'DEBIT')
-          .map((item: any) => item.amount)
-          .reduce((prev, current) => prev + current);
+        if (accountingEntries && accountingEntries.length > 0) {
+          return accountingEntries.filter((item: any) => item.type === 'DEBIT')
+            .map((item: any) => item.amount)
+            .reduce((prev, current) => 0+prev + current);
+        } else {
+          return 0;
+        }
       },
     },
     {
@@ -66,9 +70,13 @@ const VoucherManager = () => {
       key: 'creditAmount',
       render: (value, record) => {
         const accountingEntries: any[] = record.accountingEntries;
-        return accountingEntries.filter((item: any) => item.type === 'CREDIT')
-          .map((item: any) => item.amount)
-          .reduce((prev, current) => prev + current);
+        if (accountingEntries && accountingEntries.length > 0) {
+          return accountingEntries.filter((item) => item.type === 'CREDIT')
+            .map((item: any) => item.amount)
+            .reduce((prev, current) => 0+prev + current);
+        } else {
+          return 0;
+        }
       },
     },
     {

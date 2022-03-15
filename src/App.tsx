@@ -9,29 +9,35 @@ import SubjectManager from "./pages/SubjectManager";
 import { selectAccounts } from "./services/accountAPI";
 import { useAppDispatch, useAppSelector } from "./app/hooks";
 import { updateActiveAccountId } from "./redux/userInfoSlice";
+import AccountingEntryManager from "./pages/AccountingEntryManager";
+import { reloadSubjectTree } from "./redux/subjectSlice";
 
 const { Header, Content, Sider } = Layout;
 
 const menus = [
   {
     name: '凭证管理',
-    url: '/voucherManager',
     icon: <ScheduleOutlined />,
+    url: '/voucherManager',
+    component: <VoucherManager />,
   },
   {
     name: '会计分录管理',
-    url: '/accountingEntryManager',
     icon: <ScheduleOutlined />,
+    url: '/accountingEntryManager',
+    component: <AccountingEntryManager />,
   },
   {
     name: '账簿管理',
-    url: '/accountManager',
     icon: <AccountBookOutlined />,
+    url: '/accountManager',
+    component: <AccountManager />,
   },
   {
     name: '科目管理',
-    url: '/subjectManager',
     icon: <GroupOutlined />,
+    url: '/subjectManager',
+    component: <SubjectManager />,
   },
 ];
 
@@ -52,6 +58,7 @@ const App = () => {
   useEffect(() => {
     // TODO 获取用户选择的默认账簿
     dispatch(updateActiveAccountId(accounts[accounts.length - 1]?.id));
+    dispatch(reloadSubjectTree());
   }, [accounts, dispatch]);
 
   // 根据路由，设置选中菜单
@@ -101,9 +108,10 @@ const App = () => {
       </Breadcrumb>
       <Content className={styles.content}>
         <Routes>
-          <Route path="/voucherManager" element={<VoucherManager />} />
-          <Route path="/accountManager" element={<AccountManager />} />
-          <Route path="/subjectManager" element={<SubjectManager />} />
+          {menus.map(menu => {
+            const { url, component } = menu;
+            return <Route key={url} path={url} element={component} />;
+          })}
           <Route index={true} element={<VoucherManager />} />
         </Routes>
       </Content>
