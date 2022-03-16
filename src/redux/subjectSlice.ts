@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { selectSubjects } from "../services/subjectAPI";
+import { array2Tree } from "../utils/tree";
 
 export interface SubjectState {
   tree: any[];
@@ -13,18 +14,15 @@ const initialState: SubjectState = {
 export const reloadSubjectTree = createAsyncThunk(
   'subject/reload',
   async () => {
-    return await selectSubjects({});
+    const result = await selectSubjects({});
+    return array2Tree(result, 'num', 'parentNum');
   }
 );
 
 export const subjectSlice = createSlice({
   name: 'subject',
   initialState,
-  reducers: {
-    getFullSubjectIds:state => {
-
-    }
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(reloadSubjectTree.fulfilled, (state, action) => {

@@ -21,26 +21,26 @@ export function array2Tree(array: any[], idKey: string, parentIdKey: string) {
   return fillTree('0', groups);
 }
 
-export function searchTreeIds(tree: any[], idKey: string, childrenKey: string, id: number) {
-  const deepSearch = (tree: any[], id: number, ids: any[]) => {
+export function searchTreeProps(tree: any[], fieldNames: { id: string, children: string, prop: string }, id: number) {
+  const props: any[] = [];
+  const deepSearch = (tree: any[], id: number, props: any[]) => {
     if (tree && tree.length > 0) {
       for (let item of tree) {
-        ids.push(item[idKey]);
-        if (item[childrenKey] && item[childrenKey].length > 0) {
-          deepSearch(item[childrenKey], id, ids);
-          if (ids.includes(id)) {
-            break;
-          }
-        }
-        if (item[idKey] === id) {
-          break;
+        const currentId = item[fieldNames.id];
+        const children = item[fieldNames.children];
+        const prop = item[fieldNames.prop];
+        props.push(prop);
+        if (currentId === id) {
+          return true;
         } else {
-          ids.pop();
+          const flag = deepSearch(children, id, props);
+          if (!flag) {
+            props.pop();
+          }
         }
       }
     }
   }
-  const ids: any[] = [];
-  deepSearch(tree, id, ids);
-  return ids;
+  deepSearch(tree, id, props);
+  return props;
 }

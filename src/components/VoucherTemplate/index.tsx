@@ -9,7 +9,7 @@ import { selectLabels } from "../../services/labelAPI";
 import moment, { Moment } from "moment";
 import { selectSubjectBalances } from "../../services/subjectBalanceAPI";
 import { useAppSelector } from "../../app/hooks";
-import { array2Tree, searchTreeIds } from "../../utils/tree";
+import { array2Tree } from "../../utils/tree";
 
 interface AccountingEntry {
   key: string;
@@ -93,7 +93,9 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
         const { id, num, accountDate, accountingEntries, invalidVoucher, originalVoucher } = data;
         const newAccountingEntries = accountingEntries.map((accountEntry: any) => {
           const { id, summary, type, amount, labels, subjectBalance } = accountEntry;
-          const subjectIds = searchTreeIds(subjectBalanceOptions, 'id', 'children', subjectBalance.subject.id);
+          const subjectIds = subjectBalance.subject.num.split('-')
+            .map((item: any) => parseInt(item))
+            .filter((item: any) => item !== 0);
           return {
             key: id,
             summary, type, amount, subjectIds,
