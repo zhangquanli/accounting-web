@@ -196,12 +196,13 @@ const AccountingEntryManager = () => {
             <Space>
               <Button type="default" htmlType="reset">重置</Button>
               <Button type="primary" htmlType="submit">查询</Button>
+              {/*<Button type="primary" htmlType="submit">导出</Button>*/}
             </Space>
           </Col>
         </Row>
       </Form>
       <Table
-        scroll={{ y: 400 }}
+        scroll={{ y: 380 }}
         rowKey="id"
         columns={columns}
         dataSource={tableData.rows}
