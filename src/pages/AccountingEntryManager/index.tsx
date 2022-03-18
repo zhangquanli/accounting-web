@@ -7,6 +7,7 @@ import {
   DatePicker,
   Form,
   Input,
+  message,
   Row,
   Select,
   Space,
@@ -16,7 +17,7 @@ import {
 } from "antd";
 import { useForm } from "antd/es/form/Form";
 import { ColumnsType } from "antd/es/table";
-import { selectAccountingEntries } from "../../services/accountingEntryAPI";
+import { exportAccountingEntries, selectAccountingEntries } from "../../services/accountingEntryAPI";
 import { useAppSelector } from "../../app/hooks";
 import { array2Tree, searchTreeProps } from "../../utils/tree";
 import { selectSubjectBalances } from "../../services/subjectBalanceAPI";
@@ -50,19 +51,26 @@ const AccountingEntryManager = () => {
     rows: [],
   });
 
+  const toSearchParams = (queryParams: any) => {
+    const { voucherDateRange, subjects, labelId, summary } = queryParams;
+    const startVoucherDate = (voucherDateRange || [])[0]?.format('YYYY-MM-DD');
+    const endVoucherDate = (voucherDateRange || [])[1]?.format('YYYY-MM-DD');
+    const subjectId = subjects && subjects[subjects.length - 1];
+    return {
+      startVoucherDate, endVoucherDate,
+      subjectId, labelId, summary
+    };
+  };
+
   // 根据激活账簿、查询参数和分页参数，改变表格数据
   useEffect(() => {
     (async () => {
       const { current: page, pageSize: size } = pagination;
-      const { voucherDateRange, subjects, labelId, summary } = queryParams;
-      const startVoucherDate = (voucherDateRange || [])[0]?.format('YYYY-MM-DD');
-      const endVoucherDate = (voucherDateRange || [])[1]?.format('YYYY-MM-DD');
-      const subjectId = subjects && subjects[subjects.length - 1];
+      const searchParams = toSearchParams(queryParams);
       const params = {
         page, size,
         accountId: activeAccountId,
-        startVoucherDate, endVoucherDate,
-        subjectId, labelId, summary
+        ...searchParams,
       };
       const result = await selectAccountingEntries(params);
       const { totalElements: total, content: rows } = result;
@@ -196,7 +204,11 @@ const AccountingEntryManager = () => {
             <Space>
               <Button type="default" htmlType="reset">重置</Button>
               <Button type="primary" htmlType="submit">查询</Button>
-              {/*<Button type="primary" htmlType="submit">导出</Button>*/}
+              <Button type="primary" htmlType="submit" onClick={() => {
+                const params = toSearchParams(form.getFieldsValue());
+                exportAccountingEntries(params);
+                message.success('导出文件成功').then(undefined);
+              }}>导出</Button>
             </Space>
           </Col>
         </Row>

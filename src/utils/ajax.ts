@@ -1,10 +1,11 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { message } from "antd";
+import { json2Query } from "./url";
+
+const baseURL = 'http://localhost:9324/api/v1'
 
 // 创建 axios 对象
-const myAxios = axios.create({
-  baseURL: '/api/v1',
-});
+const myAxios = axios.create({ baseURL });
 
 // 添加请求拦截器
 myAxios.interceptors.request.use((config) => {
@@ -28,22 +29,8 @@ function request(url: string, data?: any, config?: AxiosRequestConfig): Promise<
 class Ajax {
   // get 请求
   get(url: string, data?: any, config?: AxiosRequestConfig) {
-    if (data) {
-      url = url + '?';
-      for (let key of Object.keys(data)) {
-        const value = data[key];
-        if (value) {
-          if (value instanceof Array) {
-            url = url + `${key}=${value.join(',')}&`;
-          } else {
-            url = url + `${key}=${value}&`;
-          }
-        }
-      }
-      url = url.substring(0, url.length - 1);
-    }
     const newConfig: AxiosRequestConfig = { ...config, method: 'get' };
-    return request(url, undefined, newConfig);
+    return request(url + json2Query(data), undefined, newConfig);
   }
 
   // post 请求
@@ -62,6 +49,33 @@ class Ajax {
   delete(url: string, config?: AxiosRequestConfig) {
     const newConfig: AxiosRequestConfig = { ...config, method: 'delete' };
     return request(url, undefined, newConfig);
+  }
+
+  // 下载请求
+  download(url: string, data?: any, config?: AxiosRequestConfig) {
+    const newConfig: AxiosRequestConfig = { ...config, method: 'get' };
+    axios.create({ baseURL, responseType: 'blob' })
+      .get(url + json2Query(data), newConfig)
+      .then(response => {
+        // 获取文件名
+        const filename = new Date().getTime() + ".xlsx";
+        const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const href = window.URL.createObjectURL(blob);
+
+        const element = document.createElement('a');
+        element.style.display = 'none';
+        element.href = href;
+        element.download = filename;
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+        window.URL.revokeObjectURL(href);
+      })
+      .catch(error => {
+        console.log(error);
+        message.destroy();
+        message.error('下载失败').then(undefined);
+      });
   }
 }
 
