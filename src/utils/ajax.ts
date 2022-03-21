@@ -2,7 +2,8 @@ import axios, { AxiosRequestConfig } from "axios";
 import { message } from "antd";
 import { json2Query } from "./url";
 
-const baseURL = 'http://localhost:9324/api/v1'
+const baseURL = 'http://localhost:9324/api/v1';
+// const baseURL = '/api/v1';
 
 // 创建 axios 对象
 const myAxios = axios.create({ baseURL });

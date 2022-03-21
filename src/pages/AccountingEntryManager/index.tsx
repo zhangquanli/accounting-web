@@ -8,6 +8,7 @@ import {
   Form,
   Input,
   message,
+  Modal,
   Row,
   Select,
   Space,
@@ -22,6 +23,7 @@ import { useAppSelector } from "../../app/hooks";
 import { array2Tree, searchTreeProps } from "../../utils/tree";
 import { selectSubjectBalances } from "../../services/subjectBalanceAPI";
 import { selectLabels } from "../../services/labelAPI";
+import VoucherTemplate from "../../components/VoucherTemplate";
 
 const { RangePicker } = DatePicker;
 
@@ -101,6 +103,12 @@ const AccountingEntryManager = () => {
     })();
   }, []);
 
+  // 模态框
+  const [modalProps, setModalProps] = useState<any>({
+    visible: false,
+    voucherId: undefined,
+  });
+
   const columns: ColumnsType<any> = [
     {
       title: '凭证日期',
@@ -116,6 +124,18 @@ const AccountingEntryManager = () => {
       key: 'voucherNum',
       render: (value, record) => {
         return record.voucher.num;
+      },
+    },
+    {
+      title: '凭证状态',
+      dataIndex: 'invalidAccountingEntry',
+      key: 'invalidAccountingEntry',
+      render: (value) => {
+        return value ? (
+          <div style={{ color: 'red' }}>已冲红</div>
+        ) : (
+          <div style={{ color: 'green' }}>正常</div>
+        );
       },
     },
     {
@@ -174,6 +194,18 @@ const AccountingEntryManager = () => {
       dataIndex: 'summary',
       key: 'summary',
     },
+    {
+      title: '操作',
+      dataIndex: 'operation',
+      key: 'operation',
+      render: (value, record) => {
+        return (
+          <Button type="link" onClick={() => {
+            setModalProps({ visible: true, voucherId: record.voucher.id })
+          }}>凭证详情</Button>
+        );
+      }
+    },
   ]
 
   return (
@@ -221,6 +253,21 @@ const AccountingEntryManager = () => {
         pagination={{ ...pagination, total: tableData.total }}
         onChange={pagination => setPagination({ ...pagination })}
       />
+      <Modal
+        title="凭证详情"
+        footer={null}
+        width="1000px"
+        visible={modalProps.visible}
+        onCancel={() => setModalProps({ visible: false })}
+      >
+        <VoucherTemplate
+          voucherId={modalProps.voucherId}
+          onInvalid={() => {
+            setModalProps({ visible: false });
+            setQueryParams({ ...queryParams });
+          }}
+        />
+      </Modal>
     </div>
   );
 };
