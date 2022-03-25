@@ -1,0 +1,14 @@
+.container {
+  min-width: 100vw;
+  min-height: 100vh;
+  background-color: whitesmoke;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .loginForm {
+    min-width: 300px;
+  }
+}
+

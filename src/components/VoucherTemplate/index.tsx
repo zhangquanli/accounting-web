@@ -323,15 +323,15 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
               }}
               disabled={voucherId !== undefined}
               displayRender={(nodes, selectedOptions: any) => {
-                return selectedOptions.map((option: any, index: number) => {
+                return (selectedOptions || []).map((option: any, index: number) => {
                   if (index === selectedOptions.length - 1) {
                     return (
                       <span key={option.id}>
-                        {option.subject.name} (<span>{['ASSETS', 'COST'].includes(option.subject.category) ? '借' : '贷'}:{option.currentAmount}</span>)
+                        {option.subject?.name} (<span>{['ASSETS', 'COST'].includes(option.subject?.category) ? '借' : '贷'}:{option.currentAmount}</span>)
                       </span>
                     );
                   } else {
-                    return (<span key={option.id}>{option.subject.name} / </span>)
+                    return (<span key={option.id}>{option.subject?.name} / </span>)
                   }
                 });
               }}

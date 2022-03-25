@@ -2,29 +2,39 @@ import axios, { AxiosRequestConfig } from "axios";
 import { message } from "antd";
 import { json2Query } from "./url";
 
-const baseURL = 'http://localhost:9324/api/v1';
-// const baseURL = '/api/v1';
+// const baseURL = 'http://localhost:9324/api/v1';
+const baseURL = '/api/v1';
 
 // 创建 axios 对象
 const myAxios = axios.create({ baseURL });
 
 // 添加请求拦截器
 myAxios.interceptors.request.use((config) => {
-  // 添加token头信息
-  return config;
+  const { headers = {} } = config;
+  const authorization = localStorage.getItem("Authorization");
+  if (authorization) {
+    headers['Authorization'] = authorization;
+  }
+  return { ...config, headers };
 });
 
-// 通用请求
-function request(url: string, data?: any, config?: AxiosRequestConfig): Promise<any> {
-  return new Promise((resolve, reject) => {
-    myAxios.request({ ...config, url, data }).then(response => {
-      resolve(response.data);
-    }).catch(error => {
+// 添加响应拦截器
+myAxios.interceptors.response.use(value => value.data, (error) => {
+  if (error.response.status === 401) {
+    (() => {
+      window.location.pathname = '/login';
       message.destroy();
-      message.error('网络异常，请稍后重试').then(undefined);
-      reject(error);
-    });
-  });
+      message.error('登录过期，请重新登录').then(undefined);
+    })();
+  } else {
+    message.destroy();
+    message.error('网络异常，请稍后重试').then(undefined);
+  }
+})
+
+// 通用请求
+export function request(url: string, data?: any, config?: AxiosRequestConfig): Promise<any> {
+  return myAxios.request({ ...config, url, data });
 }
 
 class Ajax {
@@ -60,7 +70,8 @@ class Ajax {
       .then(response => {
         // 获取文件名
         const filename = new Date().getTime() + ".xlsx";
-        const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const blob = new Blob([response.data],
+          { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const href = window.URL.createObjectURL(blob);
 
         const element = document.createElement('a');

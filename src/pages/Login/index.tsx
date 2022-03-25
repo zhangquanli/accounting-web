@@ -1,0 +1,53 @@
+import React from 'react';
+import { Button, Form, Input, message } from "antd";
+import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import styles from './index.module.scss'
+import { useNavigate } from "react-router-dom";
+import { login } from "../../services/loginAPI";
+
+const Login = () => {
+  const navigate = useNavigate();
+
+  const onFinish = async (values: any) => {
+    const result = await login(values);
+    const { access_token: accessToken, token_type: tokenType } = result;
+    localStorage.setItem('Authorization', `${tokenType} ${accessToken}`);
+    navigate('/');
+    message.success('登录成功');
+  };
+
+  return (
+    <div className={styles.container}>
+      <Form
+        name="basic"
+        onFinish={onFinish}
+        className={styles.loginForm}
+      >
+        <Form.Item>
+          <div style={{ fontSize: '20px' }}>简易财会管理系统</div>
+        </Form.Item>
+        <Form.Item
+          name="username"
+          rules={[{ required: true, message: '请输入账号' }]}
+        >
+          <Input prefix={<UserOutlined className="site-form-item-icon" />} placeholder="账号" />
+        </Form.Item>
+        <Form.Item
+          name="password"
+          rules={[{ required: true, message: '请输入密码' }]}
+        >
+          <Input
+            prefix={<LockOutlined className="site-form-item-icon" />}
+            type="password"
+            placeholder="密码"
+          />
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" htmlType="submit" style={{ width: '100%' }}>登录</Button>
+        </Form.Item>
+      </Form>
+    </div>
+  );
+};
+
+export default Login;
