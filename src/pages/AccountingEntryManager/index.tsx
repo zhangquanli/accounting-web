@@ -246,7 +246,7 @@ const AccountingEntryManager = () => {
         </Row>
       </Form>
       <Table
-        scroll={{ y: 380 }}
+        scroll={{ y: 400 }}
         rowKey="id"
         columns={columns}
         dataSource={tableData.rows}

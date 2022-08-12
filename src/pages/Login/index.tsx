@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Form, Input, message } from "antd";
+import { Button, Form, Input } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import styles from './index.module.scss'
 import { useNavigate } from "react-router-dom";
@@ -9,11 +9,9 @@ const Login = () => {
   const navigate = useNavigate();
 
   const onFinish = async (values: any) => {
-    const result = await login(values);
-    const { access_token: accessToken, token_type: tokenType } = result;
-    localStorage.setItem('Authorization', `${tokenType} ${accessToken}`);
+    const { username, password } = values;
+    await login(username, password);
     navigate('/');
-    message.success('登录成功');
   };
 
   return (

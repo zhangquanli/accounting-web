@@ -58,7 +58,7 @@ const VoucherManager = () => {
         if (accountingEntries && accountingEntries.length > 0) {
           return accountingEntries.filter((item: any) => item.type === 'DEBIT')
             .map((item: any) => item.amount)
-            .reduce((prev, current) => 0+prev + current);
+            .reduce((prev, current) => 0 + prev + current);
         } else {
           return 0;
         }
@@ -73,7 +73,7 @@ const VoucherManager = () => {
         if (accountingEntries && accountingEntries.length > 0) {
           return accountingEntries.filter((item) => item.type === 'CREDIT')
             .map((item: any) => item.amount)
-            .reduce((prev, current) => 0+prev + current);
+            .reduce((prev, current) => 0 + prev + current);
         } else {
           return 0;
         }
@@ -133,7 +133,7 @@ const VoucherManager = () => {
 
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
-    pageSize: 5,
+    pageSize: 20,
   });
 
   useEffect(() => {
@@ -163,6 +163,8 @@ const VoucherManager = () => {
     voucherId: undefined,
     templateName: undefined,
   });
+
+  // 自动获取表格的高度
 
   return (
     <div className={styles.container}>
@@ -197,8 +199,9 @@ const VoucherManager = () => {
         </Row>
       </Form>
       <Table
-        scroll={{ y: 400 }}
+        scroll={{ y: 540 }}
         rowKey="id"
+        bordered={true}
         columns={columns}
         dataSource={vouchers}
         pagination={{ ...pagination, total }}

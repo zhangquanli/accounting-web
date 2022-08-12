@@ -162,7 +162,7 @@ const SubjectManager = () => {
         rowKey="id"
         columns={columns}
         dataSource={subjectOptions}
-        scroll={{ y: 500 }}
+        scroll={{ y: 540 }}
       />
       <Modal
         title="会计科目"

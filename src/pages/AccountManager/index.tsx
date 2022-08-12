@@ -139,7 +139,7 @@ const AccountManager = () => {
         rowKey="id"
         columns={columns}
         dataSource={accounts}
-        scroll={{ y: 500 }}
+        scroll={{ y: 540 }}
       />
       {/*新增账簿的模态框*/}
       <Modal
