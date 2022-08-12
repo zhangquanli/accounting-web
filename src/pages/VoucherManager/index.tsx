@@ -199,7 +199,7 @@ const VoucherManager = () => {
         </Row>
       </Form>
       <Table
-        scroll={{ y: 540 }}
+        scroll={{ y: 500 }}
         rowKey="id"
         bordered={true}
         columns={columns}
