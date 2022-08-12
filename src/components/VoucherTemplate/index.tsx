@@ -216,6 +216,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
     }
   };
 
+
   return (
     <div className={styles.container}>
       <Row>
@@ -228,6 +229,7 @@ const VoucherTemplate: FC<Props> = ({ voucherId, onSave, onInvalid }) => {
           <DatePicker
             placeholder="请选择日期"
             allowClear={false}
+            // @ts-ignore
             value={voucher.accountDate}
             onChange={value => updateVoucher('accountDate', value)}
             disabled={voucherId !== undefined}

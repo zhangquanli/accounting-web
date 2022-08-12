@@ -91,7 +91,7 @@ const AccountingEntryManager = () => {
       setSubjectTree(tree);
       form.setFieldsValue({ subjectIds: undefined });
     })();
-  }, [activeAccountId]);
+  }, [activeAccountId, form]);
 
   // 标签数据
   const [labelOptions, setLabelOptions] = useState<any[]>([]);

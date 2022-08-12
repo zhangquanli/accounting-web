@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { AccountBookOutlined, BankTwoTone, GroupOutlined, ScheduleOutlined } from "@ant-design/icons";
+import { AccountBookOutlined, BankTwoTone, GroupOutlined, ScheduleOutlined, SettingOutlined } from "@ant-design/icons";
 import { Breadcrumb, Button, Layout, Menu, Select } from "antd";
-import { Link, Route, Routes, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { updateActiveAccountId } from "../../redux/userInfoSlice";
 import { reloadSubjectTree } from "../../redux/subjectSlice";
-import VoucherManager from "../VoucherManager";
-import AccountingEntryManager from "../AccountingEntryManager";
-import AccountManager from "../AccountManager";
-import SubjectManager from "../SubjectManager";
 import { selectAccounts } from "../../services/accountAPI";
 import styles from "./index.module.scss";
 
@@ -16,32 +12,38 @@ const { Header, Content, Sider } = Layout;
 
 const menus = [
   {
-    name: '凭证管理',
+    key: 'voucherManager',
+    label: '凭证管理',
     icon: <ScheduleOutlined />,
-    url: '/voucherManager',
-    component: <VoucherManager />,
   },
   {
-    name: '会计分录管理',
+    key: 'accountingEntryManager',
+    label: '会计分录管理',
     icon: <ScheduleOutlined />,
-    url: '/accountingEntryManager',
-    component: <AccountingEntryManager />,
   },
   {
-    name: '账簿管理',
-    icon: <AccountBookOutlined />,
-    url: '/accountManager',
-    component: <AccountManager />,
-  },
-  {
-    name: '科目管理',
-    icon: <GroupOutlined />,
-    url: '/subjectManager',
-    component: <SubjectManager />,
+    key: 'system',
+    label: '系统管理',
+    icon: <SettingOutlined />,
+    children: [
+      {
+        key: 'accountManager',
+        label: '账簿管理',
+        icon: <AccountBookOutlined />,
+      },
+      {
+        key: 'subjectManager',
+        label: '科目管理',
+        icon: <GroupOutlined />,
+      },
+    ],
   },
 ];
 
 const Manager = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   // 账簿数据
   const [accounts, setAccounts] = useState<any[]>([]);
   useEffect(() => {
@@ -60,9 +62,13 @@ const Manager = () => {
     dispatch(reloadSubjectTree());
   }, [accounts, dispatch]);
 
-  // 根据路由，设置选中菜单
-  const location = useLocation();
-  const selectedKey = location.pathname === '/' ? '/voucherManager' : location.pathname;
+  const selectedKey = () => {
+    const { pathname } = location;
+    if (pathname === '/') {
+      return 'voucherManager';
+    }
+    return pathname.substring(pathname.lastIndexOf('/') + 1, pathname.length);
+  };
 
   return (
     <Layout className={styles.container}>
@@ -87,16 +93,19 @@ const Manager = () => {
       </Header>
       <Layout>
         <Sider className={styles.sider}>
-          <Menu mode="inline" style={{ borderRight: "none" }} selectedKeys={[selectedKey]}>
-            {menus.map(item => {
-              const { name, url, icon } = item;
-              return (
-                <Menu.Item key={url} icon={icon}>
-                  <Link to={url}>{name}</Link>
-                </Menu.Item>
-              );
-            })}
-          </Menu>
+          <Menu
+            mode="inline"
+            style={{ borderRight: "none" }}
+            items={menus}
+            selectedKeys={[selectedKey()]}
+            onClick={(e) => {
+              const { keyPath } = e;
+              const to = keyPath.reverse().reduce((previous, current) => {
+                return `${previous}/${current}`;
+              }, '');
+              navigate(to);
+            }}
+          />
         </Sider>
         <Layout style={{ padding: '0 24px 24px 24px' }}>
           <Breadcrumb style={{ margin: '16px 0' }}>
@@ -105,13 +114,7 @@ const Manager = () => {
             <Breadcrumb.Item>App</Breadcrumb.Item>
           </Breadcrumb>
           <Content className={styles.content}>
-            <Routes>
-              {menus.map(menu => {
-                const { url, component } = menu;
-                return <Route key={url} path={url} element={component} />;
-              })}
-              <Route index={true} element={<VoucherManager />} />
-            </Routes>
+            <Outlet />
           </Content>
         </Layout>
       </Layout>

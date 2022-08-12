@@ -4,7 +4,6 @@ import './index.css';
 import * as serviceWorker from './serviceWorker';
 import { Provider } from 'react-redux';
 import { store } from './app/store';
-import { BrowserRouter } from "react-router-dom";
 import { ConfigProvider } from "antd";
 import zhCn from 'antd/lib/locale/zh_CN';
 import moment from "moment";
@@ -15,13 +14,11 @@ moment.locale('zh-cn');
 
 ReactDOM.render((
   <React.StrictMode>
-    <BrowserRouter>
-      <Provider store={store}>
-        <ConfigProvider locale={zhCn}>
-          <App />
-        </ConfigProvider>
-      </Provider>
-    </BrowserRouter>
+    <Provider store={store}>
+      <ConfigProvider locale={zhCn}>
+        <App />
+      </ConfigProvider>
+    </Provider>
   </React.StrictMode>
 ), document.getElementById('root'));
 
