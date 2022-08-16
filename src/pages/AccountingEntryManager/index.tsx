@@ -238,8 +238,13 @@ const AccountingEntryManager = () => {
               <Button type="primary" htmlType="submit">查询</Button>
               <Button type="primary" htmlType="submit" onClick={() => {
                 const params = toSearchParams(form.getFieldsValue());
-                exportAccountingEntries(params);
-                message.success('导出文件成功').then(undefined);
+                exportAccountingEntries(params).then(() => {
+                  message.destroy();
+                  message.success('导出文件成功').then(undefined);
+                }).catch(() => {
+                  message.destroy();
+                  message.error('下载失败').then(undefined);
+                });
               }}>导出</Button>
             </Space>
           </Col>

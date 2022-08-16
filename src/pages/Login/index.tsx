@@ -1,17 +1,28 @@
 import React from 'react';
-import { Button, Form, Input } from "antd";
+import { Button, Form, Input, message } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import styles from './index.module.scss'
 import { useNavigate } from "react-router-dom";
-import { login } from "../../services/loginAPI";
+import { token } from "../../services/oauth2API";
 
 const Login = () => {
   const navigate = useNavigate();
 
   const onFinish = async (values: any) => {
     const { username, password } = values;
-    await login(username, password);
-    navigate('/');
+    token(username, password).then(() => {
+      message.destroy();
+      message.success('登录成功');
+      navigate('/');
+    }).catch((error) => {
+      if (error.response.status === 400) {
+        message.destroy();
+        message.error('账号或密码错误');
+      } else {
+        message.destroy();
+        message.error('网络异常，请稍后重试');
+      }
+    });
   };
 
   return (
