@@ -1,5 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { AccountBookOutlined, BankTwoTone, GroupOutlined, ScheduleOutlined, SettingOutlined } from "@ant-design/icons";
+import React, { useEffect, useState } from "react";
+import {
+  AccountBookOutlined,
+  BankTwoTone,
+  GroupOutlined,
+  ScheduleOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
 import { Breadcrumb, Button, Layout, Menu, Select } from "antd";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -10,37 +16,39 @@ import styles from "./index.module.scss";
 
 const { Header, Content, Sider } = Layout;
 
+// TODO 权限路由如何处理
+// 这个是从数据库中，获取的数据
 const menus = [
   {
-    key: 'voucherManager',
-    label: '凭证管理',
+    key: "/voucherManager",
+    label: "凭证管理",
     icon: <ScheduleOutlined />,
   },
   {
-    key: 'accountingEntryManager',
-    label: '会计分录管理',
+    key: "/accountingEntryManager",
+    label: "会计分录管理",
     icon: <ScheduleOutlined />,
   },
   {
-    key: 'system',
-    label: '系统管理',
+    key: "/system",
+    label: "系统管理",
     icon: <SettingOutlined />,
     children: [
       {
-        key: 'accountManager',
-        label: '账簿管理',
+        key: "/accountManager",
+        label: "账簿管理",
         icon: <AccountBookOutlined />,
       },
       {
-        key: 'subjectManager',
-        label: '科目管理',
+        key: "/subjectManager",
+        label: "科目管理",
         icon: <GroupOutlined />,
       },
     ],
   },
 ];
 
-const Manager = () => {
+const Navigator = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -54,7 +62,9 @@ const Manager = () => {
   }, []);
 
   // 激活的账簿
-  const activeAccountId = useAppSelector(state => state.userInfo.activeAccountId);
+  const activeAccountId = useAppSelector(
+    (state) => state.userInfo.activeAccountId
+  );
   const dispatch = useAppDispatch();
   useEffect(() => {
     // TODO 获取用户选择的默认账簿
@@ -62,20 +72,28 @@ const Manager = () => {
     dispatch(reloadSubjectTree());
   }, [accounts, dispatch]);
 
+  useEffect(() => {
+    if (location.pathname === "/") {
+      navigate("/voucherManager");
+    }
+  }, [location.pathname]);
+
   const selectedKey = () => {
     const { pathname } = location;
-    if (pathname === '/') {
-      return 'voucherManager';
+    if (pathname === "/") {
+      return "voucherManager";
     }
-    return pathname.substring(pathname.lastIndexOf('/') + 1, pathname.length);
+    return pathname.substring(pathname.lastIndexOf("/"), pathname.length);
   };
 
   return (
     <Layout className={styles.container}>
       <Header className={styles.header}>
         <div>
-          <BankTwoTone style={{ fontSize: '20px', marginRight: '8px' }} />
-          <span style={{ fontSize: '18px', color: '#fff' }}>简易财会管理系统</span>
+          <BankTwoTone style={{ fontSize: "20px", marginRight: "8px" }} />
+          <span style={{ fontSize: "18px", color: "#fff" }}>
+            简易财会管理系统
+          </span>
         </div>
         <div>
           <Select
@@ -84,9 +102,11 @@ const Manager = () => {
               dispatch(updateActiveAccountId(value));
             }}
           >
-            {(accounts || []).map(account =>
-              (<Select.Option key={account.id} value={account.id}>{account.name}</Select.Option>))
-            }
+            {(accounts || []).map((account) => (
+              <Select.Option key={account.id} value={account.id}>
+                {account.name}
+              </Select.Option>
+            ))}
           </Select>
           <Button type="link">张三</Button>
         </div>
@@ -101,15 +121,15 @@ const Manager = () => {
             onClick={(e) => {
               const { keyPath } = e;
               const to = keyPath.reverse().reduce((previous, current) => {
-                return `${previous}/${current}`;
-              }, '');
+                return `${previous}${current}`;
+              }, "");
               navigate(to);
             }}
           />
         </Sider>
-        <Layout style={{ padding: '0 24px 24px 24px' }}>
-          <Breadcrumb style={{ margin: '16px 0' }}>
-            {location.pathname.split('/').map((key) => {
+        <Layout style={{ padding: "0 24px 24px 24px" }}>
+          <Breadcrumb style={{ margin: "16px 0" }}>
+            {location.pathname.split("/").map((key) => {
               return <Breadcrumb.Item key={key}>{key}</Breadcrumb.Item>;
             })}
           </Breadcrumb>
@@ -122,4 +142,4 @@ const Manager = () => {
   );
 };
 
-export default Manager;
+export default Navigator;
