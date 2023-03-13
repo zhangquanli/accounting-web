@@ -16,4 +16,4 @@ const getAuthorization = () => {
   return '';
 };
 
-export { getBaseURL, getAuthorization };
+export {getBaseURL, getAuthorization};

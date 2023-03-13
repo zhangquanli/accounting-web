@@ -2,7 +2,9 @@ import React from "react";
 import { useRoutes } from "react-router-dom";
 import routes from "./routes";
 
-const App = () => {
+interface Props {}
+
+const App: React.FC<Props> = () => {
   return useRoutes(routes);
 };
 

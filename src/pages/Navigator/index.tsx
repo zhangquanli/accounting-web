@@ -35,6 +35,21 @@ const menus = [
     icon: <SettingOutlined />,
     children: [
       {
+        key: "/apiManager",
+        label: "接口管理",
+        icon: <GroupOutlined />,
+      },
+      {
+        key: "/pageManager",
+        label: "页面管理",
+        icon: <GroupOutlined />,
+      },
+      {
+        key: "/roleManager",
+        label: "角色管理",
+        icon: <GroupOutlined />,
+      },
+      {
         key: "/accountManager",
         label: "账簿管理",
         icon: <AccountBookOutlined />,
@@ -74,16 +89,19 @@ const Navigator = () => {
 
   useEffect(() => {
     if (location.pathname === "/") {
-      navigate("/voucherManager");
+      navigate("/system/roleManager");
     }
   }, [location.pathname]);
 
-  const selectedKey = () => {
+  const selectedKeys = () => {
     const { pathname } = location;
     if (pathname === "/") {
-      return "voucherManager";
+      return ["/system", "/roleManager"];
     }
-    return pathname.substring(pathname.lastIndexOf("/"), pathname.length);
+    return pathname
+      .split("/")
+      .filter((item) => item)
+      .map((item) => `/${item}`);
   };
 
   return (
@@ -117,7 +135,7 @@ const Navigator = () => {
             mode="inline"
             style={{ borderRight: "none" }}
             items={menus}
-            selectedKeys={[selectedKey()]}
+            selectedKeys={selectedKeys()}
             onClick={(e) => {
               const { keyPath } = e;
               const to = keyPath.reverse().reduce((previous, current) => {

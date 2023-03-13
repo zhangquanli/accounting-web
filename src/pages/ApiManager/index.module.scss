@@ -1,8 +1,10 @@
 .container {
   padding: 24px;
+  height: 100%;
 
   .form {
     display: flex;
+    flex-wrap: wrap;
 
     .formItem {
       margin-right: 16px;
