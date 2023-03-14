@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { message } from "antd";
 import { json2Query } from "./url";
-import { getAuthorization, getBaseURL } from "../constants/constants";
+import { getAuthorization, getBaseURL } from "../constants/base";
 import { refreshToken } from "../services/oauth2API";
 
 let baseURL = getBaseURL();
@@ -33,7 +33,7 @@ commonAxios.interceptors.response.use(
           })
           .catch((error) => {
             message.destroy();
-            message.error("登录过期，3秒后跳转登录页面", 3).then(() => {
+            message.error("登录过期，1秒后跳转登录页面", 1).then(() => {
               window.location.href = "/login";
             });
             return Promise.reject(error);

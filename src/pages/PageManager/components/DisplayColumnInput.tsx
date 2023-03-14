@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button, Input, Space, Tag } from "antd";
 import { DisplayColumn } from "../../../constants/entity";
-import styles from "./index.module.scss";
+import styles from "./DisplayColumnInput.module.scss";
 import { nanoid } from "@reduxjs/toolkit";
 
 interface Props {

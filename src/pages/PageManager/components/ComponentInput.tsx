@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Button, Form, Input, Modal, Tag } from "antd";
 import { useForm } from "antd/es/form/Form";
-import { ComponentInfo, ModalInfo } from "../../../constants/entity";
+import { ComponentInfo } from "../../../constants/entity";
 import ApiTransfer from "./ApiTransfer";
 import DisplayColumnInput from "./DisplayColumnInput";
-import styles from "./index.module.scss";
+import styles from "./ComponentInput.module.scss";
 import { nanoid } from "@reduxjs/toolkit";
+import { ModalInfo } from "../../../constants/type";
 
 interface Props {
   value?: ComponentInfo[];

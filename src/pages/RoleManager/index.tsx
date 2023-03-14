@@ -1,23 +1,17 @@
 import React, { useEffect, useState } from "react";
 import ajax from "../../utils/ajax";
-import {
-  Button,
-  Form,
-  Input,
-  message,
-  Modal,
-  Space,
-  Table,
-  TreeSelect,
-} from "antd";
+import { Button, Form, Input, message, Modal, Space, Table } from "antd";
 import styles from "./index.module.scss";
-import { ModalInfo, Role } from "../../constants/entity";
+import { Role } from "../../constants/entity";
 import { ColumnsType } from "antd/es/table";
+import PageTree from "./components/PageTree";
+import { ModalInfo, OptionType } from "../../constants/type";
+import ParentTreeSelect from "../../components/ParentTreeSelect";
 
 interface Props {}
 
-const RoleManager: React.FC<Props> = (props) => {
-  const [roleForm] = Form.useForm<Role>();
+const RoleManager: React.FC<Props> = () => {
+  const [roleForm] = Form.useForm<any>();
 
   const [tableDataSource, setTableDataSource] = useState<Role[]>([]);
   const [tableLoading, setTableLoading] = useState<boolean>(true);
@@ -25,20 +19,26 @@ const RoleManager: React.FC<Props> = (props) => {
     title: "",
     visible: false,
   });
+  const [treeData, setTreeData] = useState<OptionType[]>([]);
 
   // 加载角色表格
   useEffect(() => {
     if (tableLoading) {
       (async () => {
         try {
-          const data: Role[] = await ajax.get("roles");
-          const newData = data.map((item) => {
-            if (item.children && item.children.length < 1) {
-              item.children = undefined;
-            }
-            return item;
-          });
-          setTableDataSource(newData);
+          const data: Role[] = await ajax.get("/roles");
+          const filter = (roles: Role[]) => {
+            return roles.map((item) => {
+              const { children } = item;
+              if (children && children.length > 0) {
+                item.children = filter(children);
+              } else {
+                item.children = undefined;
+              }
+              return item;
+            });
+          };
+          setTableDataSource(filter(data));
           setTableLoading(false);
         } catch (e) {
           console.log("调用接口失败", e);
@@ -49,80 +49,20 @@ const RoleManager: React.FC<Props> = (props) => {
     }
   }, [tableLoading]);
 
+  // 父级角色数据
   useEffect(() => {
-    (async () => {
-      const data: any = await ajax.get("/pages");
-      const menus = data[0].children;
-
-      const column2tree = (columns: any[]) => {
-        return columns.map((item: any) => {
-          const { id, name } = item;
-          return { title: `数据字段-${name}`, key: `column-${id}` };
-        });
-      };
-
-      const component2tree = (components: any[]) => {
-        return components.map((item: any) => {
-          const { id, name, columns } = item;
-          const children = column2tree(columns);
-          return { title: `组件-${name}`, key: `component-${id}`, children };
-        });
-      };
-
-      const page2tree: any = (pages: any[]) => {
-        return pages.map((item: any) => {
-          const { id, name, type, children, components } = item;
-          if (type === "REALITY") {
-            const newChildren = component2tree(components);
-            return { title: name, key: `page-${id}`, children: newChildren };
-          } else {
-            const newChildren = page2tree(children);
-            return { title: name, key: `page-${id}`, children: newChildren };
-          }
-        });
-      };
-
-      const trees = page2tree(menus);
-      console.log("树状结构", trees);
-      // setPages(trees);
-    })();
-  }, []);
-
-  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-
-  const submit = () => {
-    console.log("selectedKeys", selectedKeys);
-    const pages = selectedKeys
-      .filter((item) => item.includes("page-"))
-      .map((item) => {
-        const id = item.replace("page-", "");
-        return { id: parseInt(id) };
+    const filter = (roles: Role[]) => {
+      return roles.map((item) => {
+        const option: OptionType = { value: item.id, label: item.name };
+        const { children } = item;
+        if (children && children.length > 0) {
+          option.children = filter(children);
+        }
+        return option;
       });
-    const components = selectedKeys
-      .filter((item) => item.includes("component-"))
-      .map((item) => {
-        const id = item.replace("component-", "");
-        return { id: parseInt(id) };
-      });
-    const columns = selectedKeys
-      .filter((item) => item.includes("column-"))
-      .map((item) => {
-        const id = item.replace("column-", "");
-        return { id: parseInt(id) };
-      });
-
-    const id = 1;
-    const role = { name: "管理员", pages, components, columns };
-    (async () => {
-      try {
-        await ajax.put(`/roles/${id}`, role);
-        message.success("保存成功");
-      } catch (e) {
-        console.log("保存失败", e);
-        message.error("保存失败");
-      }
-    })();
-  };
+    };
+    setTreeData(filter(tableDataSource));
+  }, [tableDataSource]);
 
   const columns: ColumnsType<Role> = [
     {
@@ -131,36 +71,95 @@ const RoleManager: React.FC<Props> = (props) => {
       dataIndex: "name",
     },
     {
+      title: "角色代码",
+      key: "code",
+      dataIndex: "code",
+    },
+    {
       title: "操作",
       key: "operation",
       dataIndex: "operation",
       render: (value, record) => {
         return (
-          <Button
-            type="primary"
-            onClick={() => {
-              roleForm.setFieldsValue({ ...record });
-              setRoleModal({ title: "修改角色", visible: true });
-            }}
-          >
-            编辑
-          </Button>
+          <Space>
+            <Button
+              type="primary"
+              onClick={() => {
+                const { id, name, code, parent } = record;
+                const { pageInfos, componentInfos, displayColumns } = record;
+                const treeInfos = { pageInfos, componentInfos, displayColumns };
+                roleForm.setFieldsValue({ id, name, code, parent, treeInfos });
+                setRoleModal({ title: "修改角色", visible: true });
+              }}
+            >
+              编辑
+            </Button>
+            <Button
+              type="primary"
+              onClick={() => {
+                roleForm.resetFields();
+                roleForm.setFieldsValue({ parent: { id: record.id } });
+                setRoleModal({ title: "新增角色", visible: true });
+              }}
+            >
+              新增下一级角色
+            </Button>
+          </Space>
         );
       },
     },
   ];
 
-  const save = (role: Role) => {
-    console.log("ceshi", role);
+  const save = async (values: any) => {
+    if (values.id) {
+      await updateRole(values);
+    } else {
+      await insertRole(values);
+    }
+  };
+
+  const insertRole = async (values: any) => {
+    const { name, code, parent, treeInfos } = values;
+    const role: Role = { name, code, parent, ...treeInfos };
+    try {
+      await ajax.post("/roles", role);
+      message.destroy();
+      message.success("新增成功");
+      setTableLoading(true);
+      setRoleModal({ title: "", visible: false });
+    } catch (e) {
+      message.destroy();
+      message.error("新增失败");
+    }
+  };
+
+  const updateRole = async (values: any) => {
+    const { id, name, code, parent, treeInfos } = values;
+    const role: Role = { name, code, parent, ...treeInfos };
+    try {
+      await ajax.put(`/roles/${id}`, role);
+      message.destroy();
+      message.success("修改成功");
+      setTableLoading(true);
+      setRoleModal({ title: "", visible: false });
+    } catch (e) {
+      message.destroy();
+      message.error("修改失败");
+    }
   };
 
   return (
     <div className={styles.container}>
       <Space className={styles.query}>
-        <Button type="primary">查询</Button>
+        <Button type="primary" onClick={() => setTableLoading(true)}>
+          查询
+        </Button>
         <Button
           type="primary"
-          onClick={() => setRoleModal({ title: "新增角色", visible: true })}
+          onClick={() => {
+            roleForm.resetFields();
+            setRoleModal({ title: "新增角色", visible: true });
+          }}
         >
           新增
         </Button>
@@ -189,11 +188,28 @@ const RoleManager: React.FC<Props> = (props) => {
           <Form.Item name="id" hidden={true}>
             <Input />
           </Form.Item>
-          <Form.Item name="name" label="名称">
-            <Input />
+          <Form.Item name="parent" label="父级角色">
+            <ParentTreeSelect
+              treeData={treeData}
+              placeholder="请输入父级角色"
+            />
+          </Form.Item>
+          <Form.Item
+            name="name"
+            label="名称"
+            rules={[{ required: true, message: "请输入角色名称" }]}
+          >
+            <Input placeholder="请输入角色名称" />
+          </Form.Item>
+          <Form.Item
+            name="code"
+            label="代码"
+            rules={[{ required: true, message: "请输入角色代码" }]}
+          >
+            <Input placeholder="请输入角色代码" />
           </Form.Item>
           <Form.Item name="treeInfos" label="关联页面">
-            <TreeSelect />
+            <PageTree />
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 6, span: 16 }}>
             <Button type="primary" htmlType="submit">

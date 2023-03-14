@@ -1,6 +1,6 @@
 import ajax from "../utils/ajax";
 import axios, { AxiosRequestConfig } from "axios";
-import { getAuthorization, getBaseURL } from "../constants/constants";
+import { getAuthorization, getBaseURL } from "../constants/base";
 import { json2Query } from "../utils/url";
 
 export function selectAccountingEntries(data: any): Promise<any> {

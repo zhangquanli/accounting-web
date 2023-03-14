@@ -1,6 +1,6 @@
 import { nanoid } from "@reduxjs/toolkit";
 import axios, { AxiosRequestConfig } from "axios";
-import { getBaseURL } from "../constants/constants";
+import { getBaseURL } from "../constants/base";
 
 const baseURL = getBaseURL();
 const oauth2Axios = axios.create({ baseURL });

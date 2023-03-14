@@ -1,24 +1,20 @@
-export interface ModalInfo {
-  title: string;
-  visible: boolean;
+export interface BaseEntity {
+  id?: number;
 }
 
-export interface ApiInfo {
-  id?: number;
+export interface ApiInfo extends BaseEntity {
   name?: string;
   url?: string;
-  httpMethod?: string;
+  httpMethod?: "GET" | "POST" | "PUT" | "DELETE";
 }
 
-export interface DisplayColumn {
-  id?: number | string;
+export interface DisplayColumn extends BaseEntity {
   name?: string;
   code?: string;
   num?: string;
 }
 
-export interface ComponentInfo {
-  id?: number;
+export interface ComponentInfo extends BaseEntity {
   name?: string;
   code?: string;
   num?: string;
@@ -26,11 +22,10 @@ export interface ComponentInfo {
   displayColumns?: DisplayColumn[];
 }
 
-export interface PageInfo {
-  id?: number;
+export interface PageInfo extends BaseEntity {
   name?: string;
   code?: string;
-  type?: string;
+  type?: "VIRTUALITY" | "REALITY";
   url?: string;
   apiInfos?: ApiInfo[];
   componentInfos?: ComponentInfo[];
@@ -38,9 +33,32 @@ export interface PageInfo {
   parent?: PageInfo;
 }
 
-export interface Role {
-  id?: number;
+export interface Role extends BaseEntity {
   name?: string;
+  code?: string;
+  pageInfos?: PageInfo[];
+  componentInfos?: ComponentInfo[];
+  displayColumns?: DisplayColumn[];
   children?: Role[];
   parent?: Role;
+}
+
+type CheckedType = "ALL" | "HALF";
+
+export interface RoleRelPageInfo extends BaseEntity {
+  checkedType?: CheckedType;
+  role?: Role;
+  pageInfo?: PageInfo;
+}
+
+export interface RoleRelComponentInfo extends BaseEntity {
+  checkedType?: CheckedType;
+  role?: Role;
+  componentInfo?: ComponentInfo;
+}
+
+export interface RoleRelDisplayColumn extends BaseEntity {
+  checkedType?: CheckedType;
+  role?: Role;
+  displayColumn?: DisplayColumn;
 }

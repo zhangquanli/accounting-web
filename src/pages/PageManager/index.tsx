@@ -13,9 +13,10 @@ import styles from "./index.module.scss";
 import { ColumnsType } from "antd/es/table";
 import ajax from "../../utils/ajax";
 import ApiTransfer from "./components/ApiTransfer";
-import { ModalInfo, PageInfo } from "../../constants/entity";
+import { PageInfo } from "../../constants/entity";
 import ComponentInput from "./components/ComponentInput";
-import ParentTreeSelect from "./components/ParentTreeSelect";
+import { ModalInfo, OptionType } from "../../constants/type";
+import ParentTreeSelect from "../../components/ParentTreeSelect";
 
 interface Props {}
 
@@ -27,6 +28,7 @@ const typeOptions = [
 const PageManager: React.FC<Props> = () => {
   const [pageForm] = Form.useForm<PageInfo>();
   const pageType = Form.useWatch("type", pageForm);
+  const pageId = Form.useWatch("id", pageForm);
 
   const [tableDataSource, setTableDataSource] = useState<PageInfo[]>([]);
   const [tableLoading, setTableLoading] = useState<boolean>(true);
@@ -34,6 +36,7 @@ const PageManager: React.FC<Props> = () => {
     title: "",
     visible: false,
   });
+  const [treeData, setTreeData] = useState<OptionType[]>([]);
 
   // 加载页面表格
   useEffect(() => {
@@ -51,8 +54,7 @@ const PageManager: React.FC<Props> = () => {
               return item;
             });
           };
-          const newData = filter(data);
-          setTableDataSource(newData);
+          setTableDataSource(filter(data));
           setTableLoading(false);
         } catch (e) {
           console.log("接口调用失败", e);
@@ -62,6 +64,22 @@ const PageManager: React.FC<Props> = () => {
       })();
     }
   }, [tableLoading]);
+
+  // 父级页面选择数据
+  useEffect(() => {
+    const filter = (pageInfos: PageInfo[]) => {
+      return pageInfos
+        .filter((item) => item.type === "VIRTUALITY")
+        .map((item) => {
+          const option: OptionType = { value: item.id, label: item.name };
+          if (item.children && item.children.length > 0) {
+            option.children = filter(item.children);
+          }
+          return option;
+        });
+    };
+    setTreeData(filter(tableDataSource));
+  }, [tableDataSource]);
 
   const columns: ColumnsType<PageInfo> = [
     {
@@ -199,7 +217,7 @@ const PageManager: React.FC<Props> = () => {
           </Form.Item>
           <Form.Item name="parent" label="父级页面">
             <ParentTreeSelect
-              dataSource={tableDataSource}
+              treeData={treeData}
               placeholder="请选择父级页面"
             />
           </Form.Item>
@@ -229,7 +247,11 @@ const PageManager: React.FC<Props> = () => {
             label="页面类型"
             rules={[{ required: true, message: "请选择页面类型" }]}
           >
-            <Select placeholder="请选择页面类型" options={typeOptions} />
+            <Select
+              placeholder="请选择页面类型"
+              options={typeOptions}
+              disabled={pageId !== undefined}
+            />
           </Form.Item>
           <Form.Item
             name="apiInfos"
