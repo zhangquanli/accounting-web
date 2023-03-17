@@ -49,6 +49,7 @@ export interface PageInfo extends BaseEntity {
 export interface Role extends BaseEntity {
   name?: string;
   code?: string;
+  permissionColumn?: PermissionColumn;
   pageInfos?: PageInfo[];
   componentInfos?: ComponentInfo[];
   displayColumns?: DisplayColumn[];

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { PermissionColumn } from "../../../constants/entity";
 import { TreeSelect } from "antd";
 import { OptionType } from "../../../constants/type";
-import ajax from "../../../utils/ajax";
+import { getOptionsOfPermissionColumn } from "../../../services/permissionColumnService";
 
 interface Props {
   placeholder?: string;
@@ -17,18 +17,12 @@ const PermissionColumnTreeSelect: React.FC<Props> = (props) => {
 
   useEffect(() => {
     (async () => {
-      const columns: PermissionColumn[] = await ajax.get("/permissionColumns");
-      const toTree = (columns: PermissionColumn[]) => {
-        return columns.map((column) => {
-          const { id, name, children } = column;
-          const option: OptionType = { value: id, title: name };
-          if (children && children.length > 0) {
-            option.children = toTree(children);
-          }
-          return option;
-        });
-      };
-      setTreeData(toTree(columns));
+      try {
+        const options = await getOptionsOfPermissionColumn();
+        setTreeData(options);
+      } catch (e) {
+        setTreeData([]);
+      }
     })();
   }, []);
 

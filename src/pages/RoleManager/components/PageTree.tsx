@@ -3,6 +3,7 @@ import {
   ComponentInfo,
   DisplayColumn,
   PageInfo,
+  PermissionColumn,
   RoleRelComponentInfo,
   RoleRelDisplayColumn,
   RoleRelPageInfo,
@@ -11,71 +12,75 @@ import ajax from "../../../utils/ajax";
 import { Tree } from "antd";
 import styles from "./PageTree.module.scss";
 
-const column2tree = (columns: DisplayColumn[]) => {
-  return columns.map((item) => {
-    const { id, name } = item;
-    return { title: `展示字段-${name}`, key: `column-${id}` };
-  });
-};
+interface OptionType {
+  title: string;
+  key: string;
+  children?: OptionType[];
+}
 
-const component2tree = (components: ComponentInfo[]) => {
-  return components.map((item) => {
-    const { id, name, displayColumns } = item;
-    if (displayColumns && displayColumns.length > 0) {
-      const children = column2tree(displayColumns);
-      return { title: `组件-${name}`, key: `component-${id}`, children };
-    } else {
-      return { title: `组件-${name}`, key: `component-${id}` };
-    }
-  });
-};
-
-const page2tree: any = (pages: PageInfo[]) => {
-  return pages.map((item) => {
-    const { id, name, type, children, componentInfos } = item;
-    if (type === "REALITY") {
-      if (componentInfos && componentInfos.length > 0) {
-        const newChildren = component2tree(componentInfos);
-        return {
-          title: `页面-${name}`,
-          key: `page-${id}`,
-          children: newChildren,
-        };
-      } else {
-        return { title: `页面-${name}`, key: `page-${id}` };
-      }
-    } else {
-      if (children && children.length > 0) {
-        const newChildren = page2tree(children);
-        return {
-          title: `页面-${name}`,
-          key: `page-${id}`,
-          children: newChildren,
-        };
-      } else {
-        return { title: `页面-${name}`, key: `page-${id}` };
-      }
-    }
-  });
-};
-
-interface Checked {
+interface PageChecked {
   pageInfos: RoleRelPageInfo[];
   componentInfos: RoleRelComponentInfo[];
   displayColumns: RoleRelDisplayColumn[];
 }
 
 interface Props {
-  value?: Checked;
-  onChange?: (value: Checked) => void;
+  filter?: PermissionColumn;
+  value?: PageChecked;
+  onChange?: (value: PageChecked) => void;
 }
 
-const PageTree: React.FC<Props> = ({ value, onChange }) => {
-  const [treeData, setTreeData] = useState<any[]>([]);
-  const [checkedKeys, setCheckedKeys] = useState<{
-    checked: string[];
-    halfChecked: string[];
-  }>({ checked: [], halfChecked: [] });
+interface CheckedKeys {
+  checked: string[];
+  halfChecked: string[];
+}
+
+const PageTree: React.FC<Props> = ({ filter, value, onChange }) => {
+  const [pageInfos, setPageInfos] = useState<PageInfo[]>([]);
+  const [permissions, setPermissions] = useState<PermissionColumn[]>([]);
+  const [treeData, setTreeData] = useState<OptionType[]>([]);
+  const [checkedKeys, setCheckedKeys] = useState<CheckedKeys>({
+    checked: [],
+    halfChecked: [],
+  });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data: PageInfo[] = await ajax.get("/pageInfos");
+        setPageInfos(data);
+      } catch (e) {
+        setPageInfos([]);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const columns: PermissionColumn[] = await ajax.get(
+          "/permissionColumns"
+        );
+        setPermissions(columns);
+      } catch (e) {
+        setPermissions([]);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (filter && filter.id) {
+      const validateColumn = searchPermission(permissions, filter.id);
+      if (!validateColumn) {
+        setTreeData(page2tree(pageInfos));
+        return;
+      }
+      const pages = filterPages(pageInfos, validateColumn);
+      setTreeData(page2tree(pages));
+    } else {
+      setTreeData(page2tree(pageInfos));
+    }
+  }, [filter, permissions, pageInfos]);
 
   useEffect(() => {
     if (value) {
@@ -107,14 +112,6 @@ const PageTree: React.FC<Props> = ({ value, onChange }) => {
       setCheckedKeys(checkedKeys);
     }
   }, [value]);
-
-  useEffect(() => {
-    (async () => {
-      const data: PageInfo[] = await ajax.get("/pageInfos");
-      const treeData = page2tree(data);
-      setTreeData(treeData);
-    })();
-  }, []);
 
   const checkedPages = (checked: any[], halfChecked: any[]) => {
     const pagesAll: RoleRelPageInfo[] = (checked || [])
@@ -171,10 +168,6 @@ const PageTree: React.FC<Props> = ({ value, onChange }) => {
     const componentInfos = checkedComponents(checked, info.halfCheckedKeys);
     // 关联的展示字段
     const displayColumns = checkedDisplayColumns(checked, info.halfCheckedKeys);
-
-    console.log(pageInfos);
-    console.log(componentInfos);
-    console.log(displayColumns);
     // 保存
     onChange && onChange({ pageInfos, componentInfos, displayColumns });
   };
@@ -190,5 +183,130 @@ const PageTree: React.FC<Props> = ({ value, onChange }) => {
     />
   );
 };
+
+function column2tree(columns: DisplayColumn[]): OptionType[] {
+  return columns.map((item) => {
+    const { id, name } = item;
+    return { title: `展示字段-${name}`, key: `column-${id}` };
+  });
+}
+
+function component2tree(components: ComponentInfo[]): OptionType[] {
+  return components.map((item) => {
+    const { id, name, displayColumns } = item;
+    if (displayColumns && displayColumns.length > 0) {
+      const children = column2tree(displayColumns);
+      return { title: `组件-${name}`, key: `component-${id}`, children };
+    } else {
+      return { title: `组件-${name}`, key: `component-${id}` };
+    }
+  });
+}
+
+function page2tree(pages: PageInfo[]): OptionType[] {
+  return pages.map((item) => {
+    const { id, name, type, children, componentInfos } = item;
+    if (type === "REALITY") {
+      if (componentInfos && componentInfos.length > 0) {
+        const newChildren = component2tree(componentInfos);
+        return {
+          title: `页面-${name}`,
+          key: `page-${id}`,
+          children: newChildren,
+        };
+      } else {
+        return { title: `页面-${name}`, key: `page-${id}` };
+      }
+    } else {
+      if (children && children.length > 0) {
+        const newChildren = page2tree(children);
+        return {
+          title: `页面-${name}`,
+          key: `page-${id}`,
+          children: newChildren,
+        };
+      } else {
+        return { title: `页面-${name}`, key: `page-${id}` };
+      }
+    }
+  });
+}
+
+function searchPermission(
+  columns: PermissionColumn[],
+  id: number
+): PermissionColumn | undefined {
+  let result: PermissionColumn | undefined = undefined;
+  for (const column of columns) {
+    const { children } = column;
+    if (children && children.length > 0) {
+      result = searchPermission(children, id);
+      if (result) {
+        break;
+      }
+    }
+    if (column.id === id) {
+      result = column;
+      break;
+    }
+  }
+  return result;
+}
+
+function filterPages(
+  pages: PageInfo[],
+  validateColumn: PermissionColumn
+): PageInfo[] {
+  const result: PageInfo[] = [];
+  for (const page of pages) {
+    const { children, permissionColumns } = page;
+
+    let newChildren: PageInfo[] = [];
+    if (children && children.length > 0) {
+      newChildren = filterPages(children, validateColumn);
+    }
+
+    if (page.type === "REALITY") {
+      let flag = false;
+      if (permissionColumns && permissionColumns.length > 0) {
+        for (const permissionColumn of permissionColumns) {
+          flag = containsPermission([validateColumn], permissionColumn.id);
+          if (flag) {
+            break;
+          }
+        }
+      }
+      if (flag) {
+        result.push({ ...page, children: newChildren });
+      }
+    } else if (page.type === "VIRTUALITY") {
+      if (newChildren.length > 0) {
+        result.push({ ...page, children: newChildren });
+      }
+    }
+  }
+  return result;
+}
+
+function containsPermission(
+  columns: PermissionColumn[],
+  id: number | undefined
+): boolean {
+  let result = false;
+  for (const column of columns) {
+    const { children } = column;
+    if (children && children.length > 0) {
+      result = containsPermission(children, id);
+      if (result) {
+        break;
+      }
+    }
+    if (column.id === id) {
+      result = true;
+      break;
+    }
+  }
+  return result;
+}
 
 export default PageTree;

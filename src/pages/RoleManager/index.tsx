@@ -2,16 +2,19 @@ import React, { useEffect, useState } from "react";
 import ajax from "../../utils/ajax";
 import { Button, Form, Input, message, Modal, Space, Table } from "antd";
 import styles from "./index.module.scss";
-import { Role } from "../../constants/entity";
+import { PermissionColumn, Role } from "../../constants/entity";
 import { ColumnsType } from "antd/es/table";
 import PageTree from "./components/PageTree";
 import { ModalInfo, OptionType } from "../../constants/type";
 import ParentTreeSelect from "../../components/ParentTreeSelect";
+import PermissionColumnTreeSelect from "./components/PermissionColumnTreeSelect";
 
 interface Props {}
 
 const RoleManager: React.FC<Props> = () => {
   const [roleForm] = Form.useForm<any>();
+  const roleId = Form.useWatch("id", roleForm);
+  const rolePermission = Form.useWatch("permissionColumn", roleForm);
 
   const [tableDataSource, setTableDataSource] = useState<Role[]>([]);
   const [tableLoading, setTableLoading] = useState<boolean>(true);
@@ -20,6 +23,7 @@ const RoleManager: React.FC<Props> = () => {
     visible: false,
   });
   const [treeData, setTreeData] = useState<OptionType[]>([]);
+  const [permissionFilter, setPermissionFilter] = useState<PermissionColumn>();
 
   // 加载角色表格
   useEffect(() => {
@@ -64,6 +68,23 @@ const RoleManager: React.FC<Props> = () => {
     setTreeData(filter(tableDataSource));
   }, [tableDataSource]);
 
+  const openUpdateModal = (role: Role) => {
+    const { id, name, code, parent, permissionColumn } = role;
+    const { pageInfos, componentInfos, displayColumns } = role;
+    const treeInfos = { pageInfos, componentInfos, displayColumns };
+    roleForm.resetFields();
+    roleForm.setFieldsValue({
+      id,
+      name,
+      code,
+      permissionColumn,
+      parent,
+      treeInfos,
+    });
+    setPermissionFilter(undefined);
+    setRoleModal({ title: "修改角色", visible: true });
+  };
+
   const columns: ColumnsType<Role> = [
     {
       title: "角色名称",
@@ -76,22 +97,19 @@ const RoleManager: React.FC<Props> = () => {
       dataIndex: "code",
     },
     {
+      title: "权限等级",
+      key: "permissionColumn",
+      dataIndex: "permissionColumn",
+      render: (value) => value.name,
+    },
+    {
       title: "操作",
       key: "operation",
       dataIndex: "operation",
       render: (value, record) => {
         return (
           <Space>
-            <Button
-              type="primary"
-              onClick={() => {
-                const { id, name, code, parent } = record;
-                const { pageInfos, componentInfos, displayColumns } = record;
-                const treeInfos = { pageInfos, componentInfos, displayColumns };
-                roleForm.setFieldsValue({ id, name, code, parent, treeInfos });
-                setRoleModal({ title: "修改角色", visible: true });
-              }}
-            >
+            <Button type="primary" onClick={() => openUpdateModal(record)}>
               编辑
             </Button>
             <Button
@@ -99,10 +117,11 @@ const RoleManager: React.FC<Props> = () => {
               onClick={() => {
                 roleForm.resetFields();
                 roleForm.setFieldsValue({ parent: { id: record.id } });
+                setPermissionFilter(record.permissionColumn);
                 setRoleModal({ title: "新增角色", visible: true });
               }}
             >
-              新增下一级角色
+              新增下级
             </Button>
           </Space>
         );
@@ -119,8 +138,8 @@ const RoleManager: React.FC<Props> = () => {
   };
 
   const insertRole = async (values: any) => {
-    const { name, code, parent, treeInfos } = values;
-    const role: Role = { name, code, parent, ...treeInfos };
+    const { name, code, permissionColumn, parent, treeInfos } = values;
+    const role: Role = { name, code, permissionColumn, parent, ...treeInfos };
     try {
       await ajax.post("/roles", role);
       message.destroy();
@@ -134,8 +153,8 @@ const RoleManager: React.FC<Props> = () => {
   };
 
   const updateRole = async (values: any) => {
-    const { id, name, code, parent, treeInfos } = values;
-    const role: Role = { name, code, parent, ...treeInfos };
+    const { id, name, code, permissionColumn, parent, treeInfos } = values;
+    const role: Role = { name, code, permissionColumn, parent, ...treeInfos };
     try {
       await ajax.put(`/roles/${id}`, role);
       message.destroy();
@@ -158,6 +177,7 @@ const RoleManager: React.FC<Props> = () => {
           type="primary"
           onClick={() => {
             roleForm.resetFields();
+            setPermissionFilter(undefined);
             setRoleModal({ title: "新增角色", visible: true });
           }}
         >
@@ -208,8 +228,19 @@ const RoleManager: React.FC<Props> = () => {
           >
             <Input placeholder="请输入角色代码" />
           </Form.Item>
+          <Form.Item
+            name="permissionColumn"
+            label="权限字段"
+            rules={[{ required: true, message: "请输入权限字段" }]}
+          >
+            <PermissionColumnTreeSelect
+              placeholder="请输入权限字段"
+              filter={permissionFilter}
+              disabled={roleId !== undefined}
+            />
+          </Form.Item>
           <Form.Item name="treeInfos" label="关联页面">
-            <PageTree />
+            <PageTree filter={rolePermission} />
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 6, span: 16 }}>
             <Button type="primary" htmlType="submit">

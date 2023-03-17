@@ -13,7 +13,7 @@ import styles from "./index.module.scss";
 import { ColumnsType } from "antd/es/table";
 import ajax from "../../utils/ajax";
 import ApiTransfer from "./components/ApiTransfer";
-import { PageInfo } from "../../constants/entity";
+import { PageInfo, PermissionColumn } from "../../constants/entity";
 import ComponentInput from "./components/ComponentInput";
 import { ModalInfo, OptionType } from "../../constants/type";
 import ParentTreeSelect from "../../components/ParentTreeSelect";
@@ -106,6 +106,15 @@ const PageManager: React.FC<Props> = () => {
       title: "页面地址",
       key: "url",
       dataIndex: "url",
+    },
+    {
+      title: "权限等级",
+      key: "permissionColumns",
+      dataIndex: "permissionColumns",
+      render: (value: PermissionColumn[]) => {
+        const names = value.map((item) => item.name);
+        return names.join("，");
+      },
     },
     {
       title: "操作",
