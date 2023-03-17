@@ -4,8 +4,9 @@ export interface ModalInfo {
 }
 
 export interface OptionType {
-  key?: string;
-  value?: number;
+  key?: number;
   label?: string;
+  value?: number;
+  title?: string;
   children?: OptionType[];
 }

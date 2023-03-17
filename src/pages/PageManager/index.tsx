@@ -17,6 +17,7 @@ import { PageInfo } from "../../constants/entity";
 import ComponentInput from "./components/ComponentInput";
 import { ModalInfo, OptionType } from "../../constants/type";
 import ParentTreeSelect from "../../components/ParentTreeSelect";
+import PermissionColumnTreeSelect from "./components/PermissionColumnTreeSelect";
 
 interface Props {}
 
@@ -252,6 +253,14 @@ const PageManager: React.FC<Props> = () => {
               options={typeOptions}
               disabled={pageId !== undefined}
             />
+          </Form.Item>
+          <Form.Item
+            name="permissionColumns"
+            label="关联权限"
+            hidden={pageType !== "REALITY"}
+            rules={[{ required: true, message: "请选择权限" }]}
+          >
+            <PermissionColumnTreeSelect placeholder="请选择权限" />
           </Form.Item>
           <Form.Item
             name="apiInfos"

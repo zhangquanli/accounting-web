@@ -2,6 +2,11 @@ export interface BaseEntity {
   id?: number;
 }
 
+export interface PageResult<T> {
+  content: T[];
+  totalElements: number;
+}
+
 export interface ApiInfo extends BaseEntity {
   name?: string;
   url?: string;
@@ -12,6 +17,13 @@ export interface DisplayColumn extends BaseEntity {
   name?: string;
   code?: string;
   num?: string;
+}
+
+export interface PermissionColumn extends BaseEntity {
+  name?: string;
+  level?: string;
+  children?: PermissionColumn[];
+  parent?: PermissionColumn;
 }
 
 export interface ComponentInfo extends BaseEntity {
@@ -29,6 +41,7 @@ export interface PageInfo extends BaseEntity {
   url?: string;
   apiInfos?: ApiInfo[];
   componentInfos?: ComponentInfo[];
+  permissionColumns?: PermissionColumn[];
   children?: PageInfo[];
   parent?: PageInfo;
 }
@@ -62,3 +75,5 @@ export interface RoleRelDisplayColumn extends BaseEntity {
   role?: Role;
   displayColumn?: DisplayColumn;
 }
+
+export interface User extends BaseEntity {}

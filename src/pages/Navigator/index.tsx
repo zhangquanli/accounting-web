@@ -50,6 +50,11 @@ const menus = [
         icon: <GroupOutlined />,
       },
       {
+        key: "/userManager",
+        label: "用户管理",
+        icon: <GroupOutlined />,
+      },
+      {
         key: "/accountManager",
         label: "账簿管理",
         icon: <AccountBookOutlined />,
@@ -89,14 +94,14 @@ const Navigator = () => {
 
   useEffect(() => {
     if (location.pathname === "/") {
-      navigate("/system/roleManager");
+      navigate("/system/userManager");
     }
-  }, [location.pathname]);
+  }, [location.pathname, navigate]);
 
   const selectedKeys = () => {
     const { pathname } = location;
     if (pathname === "/") {
-      return ["/system", "/roleManager"];
+      return ["/system", "/userManager"];
     }
     return pathname
       .split("/")

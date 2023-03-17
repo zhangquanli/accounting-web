@@ -14,24 +14,14 @@ import {
 import { useForm } from "antd/es/form/Form";
 import { ColumnsType } from "antd/es/table";
 import ajax from "../../utils/ajax";
+import { ApiInfo, PageResult } from "../../constants/entity";
+import { ModalInfo } from "../../constants/type";
 
 interface QueryParams {
   name: string | null;
   code: string | null;
   page: number | null;
   size: number | null;
-}
-
-interface Api {
-  id: number | null;
-  name: string;
-  url: string;
-  httpMethod: string;
-}
-
-interface SaveModal {
-  visible: boolean;
-  title: string;
 }
 
 interface Props {}
@@ -45,9 +35,9 @@ const methods = [
 
 const ApiManager: React.FC<Props> = () => {
   const [queryForm] = useForm<QueryParams>();
-  const [saveForm] = useForm<Api>();
+  const [saveForm] = useForm<ApiInfo>();
 
-  const [columns] = useState<ColumnsType<Api>>([
+  const [columns] = useState<ColumnsType<ApiInfo>>([
     { title: "接口名称", dataIndex: "name", key: "name" },
     { title: "接口地址", dataIndex: "url", key: "url" },
     { title: "HTTP方法", dataIndex: "httpMethod", key: "httpMethod" },
@@ -55,19 +45,17 @@ const ApiManager: React.FC<Props> = () => {
       title: "操作",
       dataIndex: "operation",
       key: "operation",
-      render: (value, record) => {
-        return (
-          <Button
-            type="primary"
-            onClick={() => {
-              saveForm.setFieldsValue({ ...record });
-              setSaveModal({ visible: true, title: "修改接口" });
-            }}
-          >
-            编辑
-          </Button>
-        );
-      },
+      render: (value, record) => (
+        <Button
+          type="primary"
+          onClick={() => {
+            saveForm.setFieldsValue({ ...record });
+            setSaveModal({ visible: true, title: "修改接口" });
+          }}
+        >
+          编辑
+        </Button>
+      ),
     },
   ]);
   const [queryParams, setQueryParams] = useState<QueryParams>({
@@ -82,64 +70,62 @@ const ApiManager: React.FC<Props> = () => {
     total: 0,
   });
   const [loading, setLoading] = useState<boolean>(false);
-  const [dataSource, setDataSource] = useState<Api[]>([]);
-  const [saveModal, setSaveModal] = useState<SaveModal>({
+  const [dataSource, setDataSource] = useState<ApiInfo[]>([]);
+  const [saveModal, setSaveModal] = useState<ModalInfo>({
     visible: false,
     title: "",
   });
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const result: any = await ajax.get("/apiInfos", queryParams);
-        const content: Api[] = result.content;
-        setDataSource(content);
+        const result: PageResult<ApiInfo> = await ajax.get(
+          "/apiInfos",
+          queryParams
+        );
+        setDataSource(result.content);
         const { totalElements } = result;
-        if (totalElements !== pagination?.total) {
-          setPagination({
-            ...pagination,
-            total: result.totalElements,
-          });
+        if (totalElements !== pagination.total) {
+          setPagination({ ...pagination, total: totalElements });
         }
-        setLoading(false);
       } catch (e) {
-        console.log("查询【接口】失败", e);
         setDataSource([]);
+      } finally {
         setLoading(false);
       }
     })();
   }, [queryParams]);
 
-  const save = async (api: Api) => {
+  const save = async (api: ApiInfo) => {
     if (api.id) {
       await updateApi(api);
     } else {
       await insertApi(api);
     }
-    setSaveModal({ title: "", visible: false });
-    setQueryParams({ ...queryParams });
   };
 
-  const insertApi = async (api: Api) => {
+  const insertApi = async (api: ApiInfo) => {
     try {
       await ajax.post("/apiInfos", api);
       message.destroy();
       message.success("新增成功");
+      setQueryParams({ ...queryParams });
+      setSaveModal({ title: "", visible: false });
     } catch (e) {
-      console.log("新增【接口】失败", e);
       message.destroy();
       message.error("新增失败");
     }
   };
 
-  const updateApi = async (api: Api) => {
+  const updateApi = async (api: ApiInfo) => {
     try {
       await ajax.put(`/apiInfos/${api.id}`, api);
       message.destroy();
       message.success("修改成功");
+      setQueryParams({ ...queryParams });
+      setSaveModal({ title: "", visible: false });
     } catch (e) {
-      console.log("修改【接口】失败", e);
       message.destroy();
       message.error("修改失败");
     }
