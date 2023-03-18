@@ -50,9 +50,9 @@ export interface Role extends BaseEntity {
   name?: string;
   code?: string;
   permissionColumn?: PermissionColumn;
-  pageInfos?: PageInfo[];
-  componentInfos?: ComponentInfo[];
-  displayColumns?: DisplayColumn[];
+  pageInfos?: RoleRelPageInfo[];
+  componentInfos?: RoleRelComponentInfo[];
+  displayColumns?: RoleRelDisplayColumn[];
   children?: Role[];
   parent?: Role;
 }
@@ -77,4 +77,15 @@ export interface RoleRelDisplayColumn extends BaseEntity {
   displayColumn?: DisplayColumn;
 }
 
-export interface User extends BaseEntity {}
+export interface User extends BaseEntity {
+  username?: string;
+  password?: string;
+  roles?: UserRelRole[];
+}
+
+export interface UserRelRole extends BaseEntity {
+  value?: number;
+  label?: string;
+  role?: Role;
+  user?: User;
+}

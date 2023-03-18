@@ -1,65 +1,67 @@
 import React, { useEffect, useState } from "react";
-import { Role } from "../../../constants/entity";
+import { Role, User } from "../../../constants/entity";
 import { TreeSelect } from "antd";
 import { OptionType } from "../../../constants/type";
 import ajax from "../../../utils/ajax";
 
 interface Props {
   placeholder?: string;
-  value?: Role[];
-  onChange?: (value: Role[]) => void;
+  value?: Role;
+  onChange?: (value: Role) => void;
 }
 
 const RoleTreeSelect: React.FC<Props> = ({ placeholder, value, onChange }) => {
+  const [roles, setRoles] = useState<Role[]>([]);
   const [treeData, setTreeData] = useState<OptionType[]>([]);
-  const [checkedKeys, setCheckedKeys] = useState<number[]>([]);
 
   useEffect(() => {
     (async () => {
       try {
-        const roles: Role[] = await ajax.get("/roles");
-        const toTree = (roles: Role[]) => {
-          return roles.map((item) => {
-            const { id, name, children } = item;
-            const option: OptionType = { value: id, title: name };
-            if (children && children.length > 0) {
-              option.children = toTree(children);
-            }
-            return option;
-          });
-        };
-        setTreeData(toTree(roles));
+        const user: User = await ajax.get("/authentication/getUserInfo");
+        if (user.roles && user.roles.length > 0) {
+          // TODO 选择第一个角色；这里正常是用户登录后需要选择他使用的角色
+          const role = user.roles[0];
+          if (role.role) {
+            setRoles([role.role]);
+          }
+        }
       } catch (e) {
-        setTreeData([]);
+        setRoles([]);
       }
     })();
   }, []);
 
   useEffect(() => {
-    const checkedKeys: number[] = [];
-    if (value) {
-      for (let role of value) {
-        role.id && checkedKeys.push(role.id);
-      }
-    }
-    setCheckedKeys(checkedKeys);
-  }, [value]);
+    setTreeData(toTree(roles));
+  }, [roles]);
 
-  const handleChange = (values: number[]) => {
-    const roles: Role[] = values.map((item) => ({ id: item }));
-    onChange && onChange(roles);
-  };
+  function handleChange(value: number) {
+    const role: Role = { id: value };
+    onChange && onChange(role);
+  }
 
   return (
     <TreeSelect
-      treeCheckable={true}
-      showCheckedStrategy={TreeSelect.SHOW_PARENT}
       placeholder={placeholder}
+      treeDefaultExpandAll={true}
       treeData={treeData}
       onChange={handleChange}
-      value={checkedKeys}
     />
   );
 };
+
+function toTree(roles: Role[]): OptionType[] {
+  return roles.map((item) => {
+    const { id, name, children, permissionColumn } = item;
+    const option: OptionType = {
+      value: id,
+      title: `${name}（${permissionColumn?.name}）`,
+    };
+    if (children && children.length > 0) {
+      option.children = toTree(children);
+    }
+    return option;
+  });
+}
 
 export default RoleTreeSelect;

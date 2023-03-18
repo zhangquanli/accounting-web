@@ -12,7 +12,7 @@ import {
 } from "antd";
 import { PageResult, User } from "../../constants/entity";
 import { ModalInfo } from "../../constants/type";
-import RoleTreeSelect from "./components/RoleTreeSelect";
+import RoleInput from "./components/RoleInput";
 import ajax from "../../utils/ajax";
 import { ColumnsType } from "antd/es/table";
 
@@ -208,7 +208,7 @@ const UserManager: React.FC<Props> = () => {
             label="关联角色"
             rules={[{ required: true, message: "请勾选角色" }]}
           >
-            <RoleTreeSelect placeholder="请勾选角色" />
+            <RoleInput />
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 6, span: 16 }}>
             <Button type="primary" htmlType="submit">
