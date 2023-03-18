@@ -25,12 +25,11 @@ const RoleManager: React.FC<Props> = () => {
   const [treeData, setTreeData] = useState<OptionType[]>([]);
   const [permissionFilter, setPermissionFilter] = useState<PermissionColumn>();
 
-  // 加载角色表格
   useEffect(() => {
     if (tableLoading) {
       (async () => {
         try {
-          const data: Role[] = await ajax.get("/roles");
+          const data: Role[] = await ajax.get("/roles/selectTree");
           const filter = (roles: Role[]) => {
             return roles.map((item) => {
               const { children } = item;
@@ -45,7 +44,6 @@ const RoleManager: React.FC<Props> = () => {
           setTableDataSource(filter(data));
           setTableLoading(false);
         } catch (e) {
-          console.log("调用接口失败", e);
           setTableDataSource([]);
           setTableLoading(false);
         }
@@ -53,25 +51,16 @@ const RoleManager: React.FC<Props> = () => {
     }
   }, [tableLoading]);
 
-  // 父级角色数据
   useEffect(() => {
-    const filter = (roles: Role[]) => {
-      return roles.map((item) => {
-        const option: OptionType = { value: item.id, label: item.name };
-        const { children } = item;
-        if (children && children.length > 0) {
-          option.children = filter(children);
-        }
-        return option;
-      });
-    };
-    setTreeData(filter(tableDataSource));
+    setTreeData(roles2Options(tableDataSource));
   }, [tableDataSource]);
 
   const openUpdateModal = (role: Role) => {
+    console.log('role',role)
     const { id, name, code, parent, permissionColumn } = role;
-    const { pageInfos, componentInfos, displayColumns } = role;
-    const treeInfos = { pageInfos, componentInfos, displayColumns };
+    const { roleRelPageInfos } = role;
+    const { roleRelComponentInfos } = role;
+    const { roleRelDisplayColumns } = role;
     roleForm.resetFields();
     roleForm.setFieldsValue({
       id,
@@ -79,7 +68,11 @@ const RoleManager: React.FC<Props> = () => {
       code,
       permissionColumn,
       parent,
-      treeInfos,
+      treeInfos: {
+        roleRelPageInfos,
+        roleRelComponentInfos,
+        roleRelDisplayColumns,
+      },
     });
     setPermissionFilter(undefined);
     setRoleModal({ title: "修改角色", visible: true });
@@ -251,6 +244,17 @@ const RoleManager: React.FC<Props> = () => {
       </Modal>
     </div>
   );
+};
+
+const roles2Options = (roles: Role[]) => {
+  return roles.map((item) => {
+    const option: OptionType = { value: item.id, label: item.name };
+    const { children } = item;
+    if (children && children.length > 0) {
+      option.children = roles2Options(children);
+    }
+    return option;
+  });
 };
 
 export default RoleManager;

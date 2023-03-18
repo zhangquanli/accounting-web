@@ -19,9 +19,9 @@ interface OptionType {
 }
 
 interface PageChecked {
-  pageInfos: RoleRelPageInfo[];
-  componentInfos: RoleRelComponentInfo[];
-  displayColumns: RoleRelDisplayColumn[];
+  roleRelPageInfos: RoleRelPageInfo[];
+  roleRelComponentInfos: RoleRelComponentInfo[];
+  roleRelDisplayColumns: RoleRelDisplayColumn[];
 }
 
 interface Props {
@@ -47,7 +47,7 @@ const PageTree: React.FC<Props> = ({ filter, value, onChange }) => {
   useEffect(() => {
     (async () => {
       try {
-        const data: PageInfo[] = await ajax.get("/pageInfos");
+        const data: PageInfo[] = await ajax.get("/pageInfos/selectTree");
         setPageInfos(data);
       } catch (e) {
         setPageInfos([]);
@@ -84,24 +84,26 @@ const PageTree: React.FC<Props> = ({ filter, value, onChange }) => {
 
   useEffect(() => {
     if (value) {
-      const { pageInfos, componentInfos, displayColumns } = value;
-      const pagesAll: any[] = (pageInfos || [])
+      const { roleRelPageInfos } = value;
+      const { roleRelComponentInfos } = value;
+      const { roleRelDisplayColumns } = value;
+      const pagesAll: any[] = (roleRelPageInfos || [])
         .filter((item) => item.checkedType === "ALL")
         .map((item) => `page-${item.pageInfo?.id}`);
-      const componentsAll: any[] = (componentInfos || [])
+      const componentsAll: any[] = (roleRelComponentInfos || [])
         .filter((item) => item.checkedType === "ALL")
         .map((item) => `component-${item.componentInfo?.id}`);
-      const columnsAll: any[] = (displayColumns || [])
+      const columnsAll: any[] = (roleRelDisplayColumns || [])
         .filter((item) => item.checkedType === "ALL")
         .map((item) => `column-${item.displayColumn?.id}`);
 
-      const pagesHalf: any[] = (pageInfos || [])
+      const pagesHalf: any[] = (roleRelPageInfos || [])
         .filter((item) => item.checkedType === "HALF")
         .map((item) => `page-${item.pageInfo?.id}`);
-      const componentsHalf: any[] = (componentInfos || [])
+      const componentsHalf: any[] = (roleRelComponentInfos || [])
         .filter((item) => item.checkedType === "HALF")
         .map((item) => `component-${item.componentInfo?.id}`);
-      const columnsHalf: any[] = (displayColumns || [])
+      const columnsHalf: any[] = (roleRelDisplayColumns || [])
         .filter((item) => item.checkedType === "HALF")
         .map((item) => `column-${item.displayColumn?.id}`);
 
@@ -163,13 +165,24 @@ const PageTree: React.FC<Props> = ({ filter, value, onChange }) => {
 
   const handleChange = (checked: any, info: any) => {
     // 关联的页面
-    const pageInfos = checkedPages(checked, info.halfCheckedKeys);
+    const roleRelPageInfos = checkedPages(checked, info.halfCheckedKeys);
     // 关联的组件
-    const componentInfos = checkedComponents(checked, info.halfCheckedKeys);
+    const roleRelComponentInfos = checkedComponents(
+      checked,
+      info.halfCheckedKeys
+    );
     // 关联的展示字段
-    const displayColumns = checkedDisplayColumns(checked, info.halfCheckedKeys);
+    const roleRelDisplayColumns = checkedDisplayColumns(
+      checked,
+      info.halfCheckedKeys
+    );
     // 保存
-    onChange && onChange({ pageInfos, componentInfos, displayColumns });
+    onChange &&
+      onChange({
+        roleRelPageInfos,
+        roleRelComponentInfos,
+        roleRelDisplayColumns,
+      });
   };
 
   return (

@@ -81,7 +81,7 @@ const ApiManager: React.FC<Props> = () => {
       setLoading(true);
       try {
         const result: PageResult<ApiInfo> = await ajax.get(
-          "/apiInfos",
+          "/apiInfos/selectPage",
           queryParams
         );
         setDataSource(result.content);
@@ -154,7 +154,7 @@ const ApiManager: React.FC<Props> = () => {
           <Form.Item name="name" label="名称" className={styles.formItem}>
             <Input />
           </Form.Item>
-          <Form.Item name="code" label="代码" className={styles.formItem}>
+          <Form.Item name="url" label="地址" className={styles.formItem}>
             <Input />
           </Form.Item>
           <Form.Item className={styles.formItem}>

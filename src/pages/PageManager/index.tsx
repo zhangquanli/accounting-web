@@ -37,49 +37,25 @@ const PageManager: React.FC<Props> = () => {
     title: "",
     visible: false,
   });
-  const [treeData, setTreeData] = useState<OptionType[]>([]);
+  const [parentTreeData, setParentTreeData] = useState<OptionType[]>([]);
 
-  // 加载页面表格
   useEffect(() => {
     if (tableLoading) {
       (async () => {
         try {
-          const data: PageInfo[] = await ajax.get("/pageInfos");
-          const filter = (pages: PageInfo[]) => {
-            return pages.map((item) => {
-              if (item.children && item.children.length > 0) {
-                item.children = filter(item.children);
-              } else {
-                item.children = undefined;
-              }
-              return item;
-            });
-          };
-          setTableDataSource(filter(data));
-          setTableLoading(false);
+          const data: PageInfo[] = await ajax.get("/pageInfos/selectTree");
+          setTableDataSource(filterPages(data));
         } catch (e) {
-          console.log("接口调用失败", e);
           setTableDataSource([]);
+        } finally {
           setTableLoading(false);
         }
       })();
     }
   }, [tableLoading]);
 
-  // 父级页面选择数据
   useEffect(() => {
-    const filter = (pageInfos: PageInfo[]) => {
-      return pageInfos
-        .filter((item) => item.type === "VIRTUALITY")
-        .map((item) => {
-          const option: OptionType = { value: item.id, label: item.name };
-          if (item.children && item.children.length > 0) {
-            option.children = filter(item.children);
-          }
-          return option;
-        });
-    };
-    setTreeData(filter(tableDataSource));
+    setParentTreeData(pages2Options(tableDataSource));
   }, [tableDataSource]);
 
   const columns: ColumnsType<PageInfo> = [
@@ -141,7 +117,7 @@ const PageManager: React.FC<Props> = () => {
                   setPageModal({ title: "新增页面", visible: true });
                 }}
               >
-                新增下级页面
+                新增下级
               </Button>
             )}
           </Space>
@@ -162,12 +138,12 @@ const PageManager: React.FC<Props> = () => {
     try {
       await ajax.post("/pageInfos", pageInfo);
       message.destroy();
-      message.success("新增成功").then(undefined);
+      message.success("新增成功");
       setPageModal({ title: "", visible: false });
       setTableLoading(true);
     } catch (e) {
       message.destroy();
-      message.error("新增失败").then(undefined);
+      message.error("新增失败");
     }
   };
 
@@ -208,7 +184,6 @@ const PageManager: React.FC<Props> = () => {
         columns={columns}
         loading={tableLoading}
       />
-      {/*保存页面信息的弹窗*/}
       <Modal
         title={pageModal.title}
         visible={pageModal.visible}
@@ -227,7 +202,7 @@ const PageManager: React.FC<Props> = () => {
           </Form.Item>
           <Form.Item name="parent" label="父级页面">
             <ParentTreeSelect
-              treeData={treeData}
+              treeData={parentTreeData}
               placeholder="请选择父级页面"
             />
           </Form.Item>
@@ -295,5 +270,28 @@ const PageManager: React.FC<Props> = () => {
     </div>
   );
 };
+
+function filterPages(pages: PageInfo[]): PageInfo[] {
+  return pages.map((item) => {
+    if (item.children && item.children.length > 0) {
+      item.children = filterPages(item.children);
+    } else {
+      item.children = undefined;
+    }
+    return item;
+  });
+}
+
+function pages2Options(pages: PageInfo[]): OptionType[] {
+  return pages
+    .filter((item) => item.type === "VIRTUALITY")
+    .map((item) => {
+      const option: OptionType = { value: item.id, label: item.name };
+      if (item.children && item.children.length > 0) {
+        option.children = pages2Options(item.children);
+      }
+      return option;
+    });
+}
 
 export default PageManager;

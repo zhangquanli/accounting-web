@@ -22,7 +22,7 @@ const ApiTransfer: React.FC<Props> = ({ value, onChange }) => {
   useEffect(() => {
     (async () => {
       try {
-        const data: ApiInfo[] = await ajax.get("/pageInfos/apiInfos");
+        const data: ApiInfo[] = await ajax.get("/apiInfos/selectList");
         const newData = data.map((item) => {
           const { id, name, url, httpMethod } = item;
           return {
