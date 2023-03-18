@@ -9,10 +9,11 @@ import {
   Space,
   Table,
   TablePaginationConfig,
+  Tag,
 } from "antd";
-import { PageResult, User } from "../../constants/entity";
+import { PageResult, User, UserRelRole } from "../../constants/entity";
 import { ModalInfo } from "../../constants/type";
-import RoleInput from "./components/RoleInput";
+import UserRelRolesForm from "./components/UserRelRolesForm";
 import ajax from "../../utils/ajax";
 import { ColumnsType } from "antd/es/table";
 
@@ -32,11 +33,16 @@ const UserManager: React.FC<Props> = () => {
     { title: "账号", dataIndex: "username", key: "username" },
     { title: "密码", dataIndex: "password", key: "password" },
     {
-      title: "授权角色",
-      dataIndex: "roles",
-      key: "roles",
+      title: "已授权角色",
+      dataIndex: "userRelRoles",
+      key: "userRelRoles",
       render: (value) => {
-        return value.length;
+        return value.map((item: UserRelRole) => (
+          <Tag
+            className={styles.tag}
+            color="orange"
+          >{`${item.role?.name}-${item.label}`}</Tag>
+        ));
       },
     },
     {
@@ -77,7 +83,10 @@ const UserManager: React.FC<Props> = () => {
     (async () => {
       setLoading(true);
       try {
-        const result: PageResult<User> = await ajax.get("/users", queryParams);
+        const result: PageResult<User> = await ajax.get(
+          "/users/selectPage",
+          queryParams
+        );
         setDataSource(result.content);
         const { totalElements } = result;
         if (totalElements !== pagination.total) {
@@ -90,6 +99,16 @@ const UserManager: React.FC<Props> = () => {
       }
     })();
   }, [queryParams]);
+
+  const handleTableChange = (pagination: TablePaginationConfig) => {
+    setPagination({ ...pagination });
+    const { current, pageSize } = pagination;
+    setQueryParams({
+      ...queryParams,
+      page: current || 1,
+      size: pageSize || 10,
+    });
+  };
 
   const save = async (user: User) => {
     if (user.id) {
@@ -125,20 +144,16 @@ const UserManager: React.FC<Props> = () => {
     }
   };
 
-  const handleTableChange = (pagination: TablePaginationConfig) => {
-    setPagination({ ...pagination });
-    const { current, pageSize } = pagination;
-    setQueryParams({
-      ...queryParams,
-      page: current || 1,
-      size: pageSize || 10,
-    });
-  };
-
   return (
     <div className={styles.container}>
       <Space direction="vertical" size="middle">
-        <Form form={queryForm} layout="inline">
+        <Form
+          form={queryForm}
+          layout="inline"
+          onFinish={(values) => {
+            setQueryParams({ ...queryParams, ...values });
+          }}
+        >
           <Form.Item name="username" label="账号">
             <Input />
           </Form.Item>
@@ -204,11 +219,11 @@ const UserManager: React.FC<Props> = () => {
             <Input.Password placeholder="请输入密码" />
           </Form.Item>
           <Form.Item
-            name="roles"
+            name="userRelRoles"
             label="关联角色"
             rules={[{ required: true, message: "请勾选角色" }]}
           >
-            <RoleInput />
+            <UserRelRolesForm />
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 6, span: 16 }}>
             <Button type="primary" htmlType="submit">

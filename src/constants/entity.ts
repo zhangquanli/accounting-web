@@ -80,12 +80,14 @@ export interface RoleRelDisplayColumn extends BaseEntity {
 export interface User extends BaseEntity {
   username?: string;
   password?: string;
-  roles?: UserRelRole[];
+  userRelRoles?: UserRelRole[];
 }
 
 export interface UserRelRole extends BaseEntity {
-  value?: number;
+  value?: string;
   label?: string;
+  fullValue?: string;
+  fullLabel?: string;
   role?: Role;
   user?: User;
 }
