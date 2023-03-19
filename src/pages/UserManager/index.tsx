@@ -39,6 +39,7 @@ const UserManager: React.FC<Props> = () => {
       render: (value) => {
         return value.map((item: UserRelRole) => (
           <Tag
+            key={item.id}
             className={styles.tag}
             color="orange"
           >{`${item.role?.name}-${item.label}`}</Tag>
