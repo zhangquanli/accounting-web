@@ -209,8 +209,8 @@ const VoucherManager: React.FC<Props> = () => {
         accountDateRange[1] &&
         accountDateRange[1].format("YYYY-MM-DD");
       const params = {
-        current: tableParams.pagination.current,
-        pageSize: tableParams.pagination.pageSize,
+        page: tableParams.pagination.current,
+        size: tableParams.pagination.pageSize,
         accountId: activeAccountId,
         num: queryParams.num,
         startAccountDate,

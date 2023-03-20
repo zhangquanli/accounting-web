@@ -30,18 +30,23 @@ const menus = [
     icon: <ScheduleOutlined />,
   },
   {
+    key: "/accountManager",
+    label: "账簿管理",
+    icon: <AccountBookOutlined />,
+  },
+  {
+    key: "/subjectManager",
+    label: "科目管理",
+    icon: <GroupOutlined />,
+  },
+  {
     key: "/system",
     label: "系统管理",
     icon: <SettingOutlined />,
     children: [
       {
-        key: "/apiManager",
-        label: "接口管理",
-        icon: <GroupOutlined />,
-      },
-      {
-        key: "/pageManager",
-        label: "页面管理",
+        key: "/userManager",
+        label: "用户管理",
         icon: <GroupOutlined />,
       },
       {
@@ -50,18 +55,13 @@ const menus = [
         icon: <GroupOutlined />,
       },
       {
-        key: "/userManager",
-        label: "用户管理",
+        key: "/pageManager",
+        label: "页面管理",
         icon: <GroupOutlined />,
       },
       {
-        key: "/accountManager",
-        label: "账簿管理",
-        icon: <AccountBookOutlined />,
-      },
-      {
-        key: "/subjectManager",
-        label: "科目管理",
+        key: "/apiManager",
+        label: "接口管理",
         icon: <GroupOutlined />,
       },
     ],

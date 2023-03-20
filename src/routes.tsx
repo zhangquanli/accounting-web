@@ -18,14 +18,14 @@ const routes: RouteObject[] = [
     path: "/",
     element: <Navigator />,
     children: [
+      { path: "/voucherManager", element: <VoucherManager /> },
+      { path: "/accountingEntryManager", element: <AccountingEntryManager /> },
+      { path: "/subjectManager", element: <SubjectManager /> },
+      { path: "/accountManager", element: <AccountManager /> },
       { path: "/system/apiManager", element: <ApiManager /> },
       { path: "/system/pageManager", element: <PageManager /> },
       { path: "/system/roleManager", element: <RoleManager /> },
       { path: "/system/userManager", element: <UserManager /> },
-      { path: "/system/accountManager", element: <AccountManager /> },
-      { path: "/system/subjectManager", element: <SubjectManager /> },
-      { path: "/voucherManager", element: <VoucherManager /> },
-      { path: "/accountingEntryManager", element: <AccountingEntryManager /> },
     ],
   },
 ];
