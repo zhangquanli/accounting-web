@@ -56,7 +56,6 @@ const RoleManager: React.FC<Props> = () => {
   }, [tableDataSource]);
 
   const openUpdateModal = (role: Role) => {
-    console.log('role',role)
     const { id, name, code, parent, permissionColumn } = role;
     const { roleRelPageInfos } = role;
     const { roleRelComponentInfos } = role;

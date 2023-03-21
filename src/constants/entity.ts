@@ -2,9 +2,9 @@ export interface BaseEntity {
   id?: number;
 }
 
-export interface PageResult<T> {
-  content: T[];
-  totalElements: number;
+export interface ListResult<T> {
+  total: number;
+  rows: T[];
 }
 
 export interface ApiInfo extends BaseEntity {

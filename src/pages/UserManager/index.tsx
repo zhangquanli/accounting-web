@@ -11,7 +11,7 @@ import {
   TablePaginationConfig,
   Tag,
 } from "antd";
-import { PageResult, User, UserRelRole } from "../../constants/entity";
+import { ListResult, User, UserRelRole } from "../../constants/entity";
 import { ModalInfo } from "../../constants/type";
 import UserRelRolesForm from "./components/UserRelRolesForm";
 import ajax from "../../utils/ajax";
@@ -84,14 +84,14 @@ const UserManager: React.FC<Props> = () => {
     (async () => {
       setLoading(true);
       try {
-        const result: PageResult<User> = await ajax.get(
+        const result: ListResult<User> = await ajax.get(
           "/users/selectPage",
           queryParams
         );
-        setDataSource(result.content);
-        const { totalElements } = result;
-        if (totalElements !== pagination.total) {
-          setPagination({ ...pagination, total: totalElements });
+        setDataSource(result.rows);
+        const { total } = result;
+        if (total !== pagination.total) {
+          setPagination({ ...pagination, total: total });
         }
       } catch (e) {
         setDataSource([]);
