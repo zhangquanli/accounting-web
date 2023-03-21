@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Transfer } from "antd";
 import ajax from "../../../utils/ajax";
-import { ApiInfo } from "../../../constants/entity";
+import { ApiInfo, ListResult } from "../../../constants/entity";
 
 interface TransferItem {
   key: string;
@@ -22,8 +22,8 @@ const ApiTransfer: React.FC<Props> = ({ value, onChange }) => {
   useEffect(() => {
     (async () => {
       try {
-        const data: ApiInfo[] = await ajax.get("/apiInfos/selectList");
-        const newData = data.map((item) => {
+        const listResult: ListResult<ApiInfo> = await ajax.get("/apiInfos");
+        const newData = listResult.rows.map((item) => {
           const { id, name, url, httpMethod } = item;
           return {
             key: `${id}`,
@@ -33,7 +33,6 @@ const ApiTransfer: React.FC<Props> = ({ value, onChange }) => {
         });
         setDataSource(newData);
       } catch (e) {
-        console.log("接口调用失败", e);
         setDataSource([]);
       }
     })();

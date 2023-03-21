@@ -13,7 +13,7 @@ import styles from "./index.module.scss";
 import { ColumnsType } from "antd/es/table";
 import ajax from "../../utils/ajax";
 import ApiTransfer from "./components/ApiTransfer";
-import { PageInfo, PermissionColumn } from "../../constants/entity";
+import { ListResult, PageInfo, PermissionColumn } from "../../constants/entity";
 import ComponentInput from "./components/ComponentInput";
 import { ModalInfo, OptionType } from "../../constants/type";
 import ParentTreeSelect from "../../components/ParentTreeSelect";
@@ -43,8 +43,8 @@ const PageManager: React.FC<Props> = () => {
     if (tableLoading) {
       (async () => {
         try {
-          const data: PageInfo[] = await ajax.get("/pageInfos/selectTree");
-          setTableDataSource(filterPages(data));
+          const listResult: ListResult<PageInfo> = await ajax.get("/pageInfos");
+          setTableDataSource(filterPages(listResult.rows));
         } catch (e) {
           setTableDataSource([]);
         } finally {
@@ -99,13 +99,7 @@ const PageManager: React.FC<Props> = () => {
       render: (value, record) => {
         return (
           <Space>
-            <Button
-              type="primary"
-              onClick={() => {
-                pageForm.setFieldsValue({ ...record });
-                setPageModal({ title: "修改页面", visible: true });
-              }}
-            >
+            <Button type="primary" onClick={() => openPageModal(record.id)}>
               编辑
             </Button>
             {record.type === "VIRTUALITY" && (
@@ -125,6 +119,18 @@ const PageManager: React.FC<Props> = () => {
       },
     },
   ];
+
+  const openPageModal = async (id: number | undefined) => {
+    try {
+      const pageInfo: PageInfo = await ajax.get(`/pageInfos/${id}`);
+      pageForm.resetFields();
+      pageForm.setFieldsValue({ ...pageInfo });
+      setPageModal({ title: "修改页面", visible: true });
+    } catch (e) {
+      message.destroy();
+      message.error("数据查询异常");
+    }
+  };
 
   const save = async (pageInfo: PageInfo) => {
     if (pageInfo.id) {
@@ -161,29 +167,31 @@ const PageManager: React.FC<Props> = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <Space className={styles.query}>
-        <Button type="primary" onClick={() => setTableLoading(true)}>
-          查询
-        </Button>
-        <Button
-          type="primary"
-          onClick={() => {
-            pageForm.resetFields();
-            setPageModal({ title: "新增页面", visible: true });
-          }}
-        >
-          新增根页面
-        </Button>
+    <>
+      <Space direction="vertical" size="middle" className={styles.container}>
+        <Space>
+          <Button type="primary" onClick={() => setTableLoading(true)}>
+            查询
+          </Button>
+          <Button
+            type="primary"
+            onClick={() => {
+              pageForm.resetFields();
+              setPageModal({ title: "新增页面", visible: true });
+            }}
+          >
+            新增根页面
+          </Button>
+        </Space>
+        <Table
+          rowKey="id"
+          scroll={{ y: 500 }}
+          pagination={false}
+          dataSource={tableDataSource}
+          columns={columns}
+          loading={tableLoading}
+        />
       </Space>
-      <Table
-        rowKey="id"
-        scroll={{ y: 500 }}
-        pagination={false}
-        dataSource={tableDataSource}
-        columns={columns}
-        loading={tableLoading}
-      />
       <Modal
         title={pageModal.title}
         visible={pageModal.visible}
@@ -267,7 +275,7 @@ const PageManager: React.FC<Props> = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 };
 
