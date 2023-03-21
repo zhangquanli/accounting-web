@@ -6,7 +6,7 @@ import {
   ScheduleOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
-import { Breadcrumb, Button, Layout, Menu, Select } from "antd";
+import {Breadcrumb, Button, Dropdown, Layout, Menu, Select} from "antd";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { updateActiveAccountId } from "../../redux/userInfoSlice";
@@ -47,22 +47,22 @@ const menus = [
       {
         key: "/userManager",
         label: "用户管理",
-        icon: <GroupOutlined />,
+        icon: <SettingOutlined />,
       },
       {
         key: "/roleManager",
         label: "角色管理",
-        icon: <GroupOutlined />,
+        icon: <SettingOutlined />,
       },
       {
         key: "/pageManager",
         label: "页面管理",
-        icon: <GroupOutlined />,
+        icon: <SettingOutlined />,
       },
       {
         key: "/apiManager",
         label: "接口管理",
-        icon: <GroupOutlined />,
+        icon: <SettingOutlined />,
       },
     ],
   },
@@ -114,9 +114,7 @@ const Navigator = () => {
       <Header className={styles.header}>
         <div>
           <BankTwoTone style={{ fontSize: "20px", marginRight: "8px" }} />
-          <span style={{ fontSize: "18px", color: "#fff" }}>
-            简易财会管理系统
-          </span>
+          <span style={{ fontSize: "18px", color: "#fff" }}>财务管理系统</span>
         </div>
         <div>
           <Select

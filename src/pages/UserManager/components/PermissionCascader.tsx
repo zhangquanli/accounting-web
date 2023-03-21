@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Role, User, UserRelRole } from "../../../constants/entity";
+import { PermissionColumn, Role, UserRelRole } from "../../../constants/entity";
 import { Select, Space } from "antd";
 import ajax from "../../../utils/ajax";
 
@@ -22,66 +22,90 @@ interface PermissionGroup {
 
 interface Props {
   selectedRole?: Role;
-  value?: UserRelRole;
   onChange?: (value: UserRelRole) => void;
 }
 
-const PermissionCascader: React.FC<Props> = (props) => {
-  const { selectedRole, onChange } = props;
-
-  const [current, setCurrent] = useState<UserRelRole | undefined>();
-  const [currentRole, setCurrentRole] = useState<Role | undefined>(undefined);
+const PermissionCascader: React.FC<Props> = ({ selectedRole, onChange }) => {
+  const [currentRole, setCurrentRole] = useState<UserRelRole>();
+  const [permissionColumns, setPermissionColumns] = useState<
+    PermissionColumn[]
+  >([]);
+  const [levels, setLevels] = useState<Level[]>([]);
   const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>(
     []
   );
 
-  // 获取当前用户的关联角色信息
+  // 获取当前用户选择的角色信息
   useEffect(() => {
     (async () => {
       try {
-        const user: User = await ajax.get("/authentication/getUserInfo");
-        const { userRelRoles } = user;
-        if (userRelRoles && userRelRoles.length > 0) {
-          // TODO 选择第一个角色；这里正常是用户登录后需要选择他使用的角色
-          const userRelRole = userRelRoles[0];
-          setCurrent(userRelRole);
-
-          const role: Role = await ajax.get(`/roles/${userRelRole.role?.id}`);
-          setCurrentRole(role);
-        } else {
-          setCurrent(undefined);
-        }
+        const currentRole: UserRelRole = await ajax.get(
+          "/authentication/currentRole"
+        );
+        setCurrentRole(currentRole);
       } catch (e) {
-        setCurrent(undefined);
+        setCurrentRole(undefined);
       }
     })();
   }, []);
 
+  // 获取权限等级数据
   useEffect(() => {
-    if (current && current.role && selectedRole && currentRole) {
-      const { permissionColumn = {} } = current.role;
-      const level = {
-        value: permissionColumn.level,
-        label: permissionColumn.name,
-      };
-      const option: Option = {
-        value: current.value,
-        label: current.label,
-        level: level,
-      };
-      const levels = searchPermissions([currentRole], selectedRole.id);
-      const groups: PermissionGroup[] = [];
-      for (let i = 0; i < levels.length; i++) {
-        const item = levels[i];
-        const group: PermissionGroup = { level: item, options: [] };
-        if (item.value === option.level?.value) {
-          group.options = [option];
+    (async () => {
+      let permissionColumns: PermissionColumn[] = [];
+      const id = (currentRole || {}).role?.permissionColumn?.id;
+      if (id) {
+        try {
+          const permissionColumn: PermissionColumn = await ajax.get(
+            `/permissionColumns/${id}`
+          );
+          permissionColumns = [permissionColumn];
+        } catch (e) {
+          permissionColumns = [];
         }
-        groups.push(group);
       }
-      setPermissionGroups(groups);
+      setPermissionColumns(permissionColumns);
+    })();
+  }, [currentRole]);
+
+  useEffect(() => {
+    if (permissionColumns.length > 0 && selectedRole) {
+      const levelValue = selectedRole.permissionColumn?.level;
+      const levels = searchPermissions(permissionColumns, levelValue);
+      setLevels(levels);
+    } else {
+      setLevels([]);
     }
-  }, [selectedRole, current]);
+  }, [permissionColumns, selectedRole]);
+
+  useEffect(() => {
+    if (!currentRole) {
+      setPermissionGroups([]);
+      return;
+    }
+
+    const { permissionColumn = {} } = currentRole.role || {};
+    const level = {
+      value: permissionColumn.level,
+      label: permissionColumn.name,
+    };
+    const option: Option = {
+      value: currentRole.value,
+      label: currentRole.label,
+      level: level,
+    };
+
+    const groups: PermissionGroup[] = [];
+    for (let i = 0; i < levels.length; i++) {
+      const item = levels[i];
+      const group: PermissionGroup = { level: item, options: [] };
+      if (item.value === option.level?.value) {
+        group.options = [option];
+      }
+      groups.push(group);
+    }
+    setPermissionGroups(groups);
+  }, [currentRole, levels]);
 
   const processPermissionGroups = async (option: any, level: Level) => {
     const index = permissionGroups.findIndex(
@@ -144,22 +168,21 @@ const PermissionCascader: React.FC<Props> = (props) => {
   );
 };
 
-function searchPermissions(roles: Role[], roleId: number | undefined): Level[] {
+function searchPermissions(
+  roles: PermissionColumn[],
+  levelValue: string | undefined
+): Level[] {
   for (let item of roles) {
-    const { children, permissionColumn } = item;
+    const { children, name: label, level: value } = item;
     if (children && children.length > 0) {
-      const result = searchPermissions(children, roleId);
-      if (result.length > 0 && permissionColumn) {
-        const { level: value, name: label } = permissionColumn;
+      const result = searchPermissions(children, levelValue);
+      if (result.length > 0) {
         const level = { value, label };
         return [level, ...result];
       }
     }
-    if (item.id === roleId) {
-      if (permissionColumn) {
-        const { level: value, name: label } = permissionColumn;
-        return [{ value, label }];
-      }
+    if (value === levelValue) {
+      return [{ value, label }];
     }
   }
   return [];

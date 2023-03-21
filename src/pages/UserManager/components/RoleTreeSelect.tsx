@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Role, User } from "../../../constants/entity";
+import { Role, UserRelRole } from "../../../constants/entity";
 import { TreeSelect } from "antd";
 import { OptionType } from "../../../constants/type";
 import ajax from "../../../utils/ajax";
@@ -7,30 +7,21 @@ import ajax from "../../../utils/ajax";
 interface Props {
   placeholder?: string;
   value?: Role;
-  onChange?: (value: Role) => void;
+  onChange?: (value: Role | undefined) => void;
 }
 
 const RoleTreeSelect: React.FC<Props> = ({ placeholder, value, onChange }) => {
-  const [currentRole, setCurrentRole] = useState<Role | undefined>(undefined);
+  const [currentRole, setCurrentRole] = useState<UserRelRole>();
+  const [roles, setRoles] = useState<Role[]>([]);
   const [treeData, setTreeData] = useState<OptionType[]>([]);
 
   useEffect(() => {
     (async () => {
       try {
-        const user: User = await ajax.get("/authentication/getUserInfo");
-        if (user.userRelRoles && user.userRelRoles.length > 0) {
-          // TODO 选择第一个角色；这里正常是用户登录后需要选择他使用的角色
-          const userRelRole = user.userRelRoles[0];
-          // 查询角色数据
-          try {
-            const newRole: Role = await ajax.get(
-              `/roles/${userRelRole.role?.id}`
-            );
-            setCurrentRole(newRole);
-          } catch (e) {
-            setCurrentRole(undefined);
-          }
-        }
+        const currentRole: UserRelRole = await ajax.get(
+          "/authentication/currentRole"
+        );
+        setCurrentRole(currentRole);
       } catch (e) {
         setCurrentRole(undefined);
       }
@@ -38,11 +29,26 @@ const RoleTreeSelect: React.FC<Props> = ({ placeholder, value, onChange }) => {
   }, []);
 
   useEffect(() => {
-    currentRole && setTreeData(toTree([currentRole]));
+    if (!currentRole) {
+      setRoles([]);
+      return;
+    }
+    (async () => {
+      try {
+        const role: Role = await ajax.get(`/roles/${currentRole.role?.id}`);
+        setRoles([role]);
+      } catch (e) {
+        setRoles([]);
+      }
+    })();
   }, [currentRole]);
 
-  function handleChange(value: any, label: any) {
-    const role: Role = { id: value, name: label[0] };
+  useEffect(() => {
+    setTreeData(toTree(roles));
+  }, [roles]);
+
+  function handleChange(value: any) {
+    const role = search(roles, value);
     onChange && onChange(role);
   }
 
@@ -70,6 +76,21 @@ function toTree(roles: Role[]): OptionType[] {
     }
     return option;
   });
+}
+
+function search(roles: Role[], roleId: number | undefined): Role | undefined {
+  for (let role of roles) {
+    const { children } = role;
+    if (children && children.length > 0) {
+      const result = search(children, roleId);
+      if (result) {
+        return result;
+      }
+    }
+    if (role.id === roleId) {
+      return role;
+    }
+  }
 }
 
 export default RoleTreeSelect;
