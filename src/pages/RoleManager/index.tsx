@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import ajax from "../../utils/ajax";
 import { Button, Form, Input, message, Modal, Space, Table } from "antd";
 import styles from "./index.module.scss";
-import { PermissionColumn, Role } from "../../constants/entity";
+import { ListResult, PermissionColumn, Role } from "../../constants/entity";
 import { ColumnsType } from "antd/es/table";
 import PageTree from "./components/PageTree";
 import { ModalInfo, OptionType } from "../../constants/type";
@@ -29,7 +29,7 @@ const RoleManager: React.FC<Props> = () => {
     if (tableLoading) {
       (async () => {
         try {
-          const data: Role[] = await ajax.get("/roles/selectTree");
+          const listResult: ListResult<Role> = await ajax.get("/roles");
           const filter = (roles: Role[]) => {
             return roles.map((item) => {
               const { children } = item;
@@ -41,7 +41,7 @@ const RoleManager: React.FC<Props> = () => {
               return item;
             });
           };
-          setTableDataSource(filter(data));
+          setTableDataSource(filter(listResult.rows));
           setTableLoading(false);
         } catch (e) {
           setTableDataSource([]);

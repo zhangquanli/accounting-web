@@ -46,7 +46,14 @@ const ApiManager: React.FC<Props> = () => {
       dataIndex: "operation",
       key: "operation",
       render: (value, record) => (
-        <Button type="primary" onClick={() => openUpdateModal(record.id)}>
+        <Button
+          type="primary"
+          onClick={() => {
+            saveForm.resetFields();
+            saveForm.setFieldsValue({ ...record });
+            setSaveModal({ visible: true, title: "修改接口" });
+          }}
+        >
           编辑
         </Button>
       ),
@@ -89,17 +96,6 @@ const ApiManager: React.FC<Props> = () => {
       }
     })();
   }, [queryParams]);
-
-  const openUpdateModal = async (id: number | undefined) => {
-    try {
-      const apiInfo: ApiInfo = await ajax.get(`/apiInfos/${id}`);
-      saveForm.setFieldsValue({ ...apiInfo });
-      setSaveModal({ visible: true, title: "修改接口" });
-    } catch (e) {
-      message.destroy();
-      message.error("查询数据异常");
-    }
-  };
 
   const save = async (api: ApiInfo) => {
     if (api.id) {

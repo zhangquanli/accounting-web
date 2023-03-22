@@ -99,7 +99,14 @@ const PageManager: React.FC<Props> = () => {
       render: (value, record) => {
         return (
           <Space>
-            <Button type="primary" onClick={() => openPageModal(record.id)}>
+            <Button
+              type="primary"
+              onClick={() => {
+                pageForm.resetFields();
+                pageForm.setFieldsValue({ ...record });
+                setPageModal({ title: "修改页面", visible: true });
+              }}
+            >
               编辑
             </Button>
             {record.type === "VIRTUALITY" && (
@@ -119,18 +126,6 @@ const PageManager: React.FC<Props> = () => {
       },
     },
   ];
-
-  const openPageModal = async (id: number | undefined) => {
-    try {
-      const pageInfo: PageInfo = await ajax.get(`/pageInfos/${id}`);
-      pageForm.resetFields();
-      pageForm.setFieldsValue({ ...pageInfo });
-      setPageModal({ title: "修改页面", visible: true });
-    } catch (e) {
-      message.destroy();
-      message.error("数据查询异常");
-    }
-  };
 
   const save = async (pageInfo: PageInfo) => {
     if (pageInfo.id) {

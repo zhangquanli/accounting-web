@@ -84,17 +84,13 @@ const UserManager: React.FC<Props> = () => {
     (async () => {
       setLoading(true);
       try {
-        const result: ListResult<User> = await ajax.get(
-          "/users/selectPage",
-          queryParams
-        );
-        setDataSource(result.rows);
-        const { total } = result;
-        if (total !== pagination.total) {
-          setPagination({ ...pagination, total: total });
-        }
+        const result: ListResult<User> = await ajax.get("/users", queryParams);
+        const { total, rows } = result;
+        setDataSource(rows);
+        setPagination((prev) => ({ ...prev, total: total }));
       } catch (e) {
         setDataSource([]);
+        setPagination((prev) => ({ ...prev, total: 0 }));
       } finally {
         setLoading(false);
       }

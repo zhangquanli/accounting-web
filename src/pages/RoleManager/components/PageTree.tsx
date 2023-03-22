@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   ComponentInfo,
   DisplayColumn,
+  ListResult,
   PageInfo,
   PermissionColumn,
   RoleRelComponentInfo,
@@ -47,8 +48,8 @@ const PageTree: React.FC<Props> = ({ filter, value, onChange }) => {
   useEffect(() => {
     (async () => {
       try {
-        const data: PageInfo[] = await ajax.get("/pageInfos/selectTree");
-        setPageInfos(data);
+        const listResult: ListResult<PageInfo> = await ajax.get("/pageInfos");
+        setPageInfos(listResult.rows);
       } catch (e) {
         setPageInfos([]);
       }
