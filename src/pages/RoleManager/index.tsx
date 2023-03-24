@@ -26,29 +26,31 @@ const RoleManager: React.FC<Props> = () => {
   const [permissionFilter, setPermissionFilter] = useState<PermissionColumn>();
 
   useEffect(() => {
-    if (tableLoading) {
-      (async () => {
-        try {
-          const listResult: ListResult<Role> = await ajax.get("/roles");
-          const filter = (roles: Role[]) => {
-            return roles.map((item) => {
-              const { children } = item;
-              if (children && children.length > 0) {
-                item.children = filter(children);
-              } else {
-                item.children = undefined;
-              }
-              return item;
-            });
-          };
-          setTableDataSource(filter(listResult.rows));
-          setTableLoading(false);
-        } catch (e) {
-          setTableDataSource([]);
-          setTableLoading(false);
-        }
-      })();
+    if (!tableLoading) {
+      return;
     }
+    (async () => {
+      try {
+        const listResult: ListResult<Role> = await ajax.get("/roles");
+        const filter = (roles: Role[]) => {
+          return roles.map((item) => {
+            const { children } = item;
+            if (children && children.length > 0) {
+              item.children = filter(children);
+            } else {
+              item.children = undefined;
+            }
+            return item;
+          });
+        };
+        const filterRoles = filter(listResult.rows);
+        setTableDataSource(filterRoles);
+      } catch (e) {
+        setTableDataSource([]);
+      } finally {
+        setTableLoading(false);
+      }
+    })();
   }, [tableLoading]);
 
   useEffect(() => {
@@ -161,29 +163,31 @@ const RoleManager: React.FC<Props> = () => {
 
   return (
     <div className={styles.container}>
-      <Space className={styles.query}>
-        <Button type="primary" onClick={() => setTableLoading(true)}>
-          查询
-        </Button>
-        <Button
-          type="primary"
-          onClick={() => {
-            roleForm.resetFields();
-            setPermissionFilter(undefined);
-            setRoleModal({ title: "新增角色", visible: true });
-          }}
-        >
-          新增
-        </Button>
+      <Space direction="vertical" size="middle">
+        <Space>
+          <Button type="primary" onClick={() => setTableLoading(true)}>
+            查询
+          </Button>
+          <Button
+            type="primary"
+            onClick={() => {
+              roleForm.resetFields();
+              setPermissionFilter(undefined);
+              setRoleModal({ title: "新增角色", visible: true });
+            }}
+          >
+            新增
+          </Button>
+        </Space>
+        <Table
+          rowKey="id"
+          scroll={{ y: 500 }}
+          pagination={false}
+          dataSource={tableDataSource}
+          columns={columns}
+          loading={tableLoading}
+        />
       </Space>
-      <Table
-        rowKey="id"
-        scroll={{ y: 500 }}
-        pagination={false}
-        dataSource={tableDataSource}
-        columns={columns}
-        loading={tableLoading}
-      />
       <Modal
         title={roleModal.title}
         visible={roleModal.visible}
