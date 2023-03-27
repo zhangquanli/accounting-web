@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Role, UserRelRole } from "../../../constants/entity";
+import { ListResult, Role, UserRelRole } from "../../../constants/entity";
 import { TreeSelect } from "antd";
 import { OptionType } from "../../../constants/type";
 import ajax from "../../../utils/ajax";
@@ -35,8 +35,13 @@ const RoleTreeSelect: React.FC<Props> = ({ placeholder, value, onChange }) => {
     }
     (async () => {
       try {
-        const role: Role = await ajax.get(`/roles/${currentRole.role?.id}`);
-        setRoles([role]);
+        if (currentRole.role?.permissionColumn?.level === "ALL") {
+          const result: ListResult<Role> = await ajax.get("/roles");
+          setRoles(result.rows);
+        } else {
+          const role: Role = await ajax.get(`/roles/${currentRole.role?.id}`);
+          setRoles([role]);
+        }
       } catch (e) {
         setRoles([]);
       }

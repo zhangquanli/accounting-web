@@ -32,12 +32,18 @@ const UserRelRolesForm: React.FC<Props> = ({ value, onChange }) => {
   const saveUserRelRole = (values: any) => {
     const { role, permission } = values;
     const userRelRole = { ...permission, role };
-    const index = userRelRoles.findIndex(
-      (item) => item.value === userRelRole.value
-    );
+
+    const contains = (userRelRole1: UserRelRole, userRelRole2: UserRelRole) => {
+      return (
+        userRelRole1.fullValue === userRelRole2.fullValue &&
+        userRelRole1.role?.id === userRelRole2.role?.id
+      );
+    };
+    console.log("userRelRole", userRelRole);
+    const index = userRelRoles.findIndex((item) => contains(item, userRelRole));
     if (index > -1) {
       const newUserRelRoles = userRelRoles.map((item) => {
-        if (item.value === userRelRole.value) {
+        if (contains(item, userRelRole)) {
           return userRelRole;
         } else {
           return item;
@@ -67,7 +73,7 @@ const UserRelRolesForm: React.FC<Props> = ({ value, onChange }) => {
         {userRelRoles.map((item) => (
           <Tag
             className={styles.tag}
-            key={item.fullValue}
+            key={`${item.role?.id}_${item.fullValue}`}
             color="orange"
             closable={true}
             onClose={() => deleteUserRelRole(item)}
